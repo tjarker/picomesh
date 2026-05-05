@@ -1,0 +1,9 @@
+test_run_dir/
+target/
+project/
+.bloop/
+.vscode/
+.metals/
+.bsp/
+runs/
+.DS_Store
