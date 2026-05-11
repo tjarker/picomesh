@@ -118,16 +118,19 @@ class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
   })
 
   override val desiredName: String = "picorv32_wb"
-  addPath("picorv32.v")
+  addPath("src/verilog/picorv32.v")
 }
 
 
-class PicoRv(c: PicoRvConfig, coreId: Int) extends Module {
+class PicoRv(c: PicoRvConfig) extends Module {
 
   val io = IO(new Bundle {
+    val coreId = Input(UInt(4.W))
     val wb = new WishbonePort
     val remoteWb = Flipped(new WishbonePort)
   })
+
+
 
   val core = Module(new PicoRvBlackBox(c))
 
@@ -145,7 +148,7 @@ class PicoRv(c: PicoRvConfig, coreId: Int) extends Module {
   
 
 
-  val isLocalAccess = core.io.wbm_adr_o(31, 28) === coreId.U || core.io.wbm_adr_o === 0xFFFF_0000L.U
+  val isLocalAccess = core.io.wbm_adr_o(31, 28) === io.coreId || core.io.wbm_adr_o === 0xFFFF_0000L.U
 
   io.remoteWb.ack := io.remoteWb.cyc
   core.io.wbm_ack_i := Mux(!isLocalAccess, io.wb.ack, core.io.wbm_cyc_o && !io.remoteWb.cyc)
@@ -159,10 +162,10 @@ class PicoRv(c: PicoRvConfig, coreId: Int) extends Module {
 
 
 
-  val localAccessAddr = Mux(io.wb.cyc, io.wb.adr, core.io.wbm_adr_o)
-  val localAccessData = Mux(io.wb.cyc, io.wb.wdata, core.io.wbm_dat_o)
-  val localAccessMask = Mux(io.wb.cyc, io.wb.sel, core.io.wbm_sel_o)
-  val localAccessWrite = Mux(io.wb.cyc, io.wb.we, core.io.wbm_we_o)
+  val localAccessAddr = Mux(io.remoteWb.cyc, io.remoteWb.adr, core.io.wbm_adr_o)
+  val localAccessData = Mux(io.remoteWb.cyc, io.remoteWb.wdata, core.io.wbm_dat_o)
+  val localAccessMask = Mux(io.remoteWb.cyc, io.remoteWb.sel, core.io.wbm_sel_o)
+  val localAccessWrite = Mux(io.remoteWb.cyc, io.remoteWb.we, core.io.wbm_we_o)
 
 
   /* 
@@ -186,7 +189,7 @@ class PicoRv(c: PicoRvConfig, coreId: Int) extends Module {
 
   val readData = MuxCase(0.U, Seq(
     scratchPadAccess -> scratchPad.read(localAccessAddr(3, 2)),
-    coreIdAccess -> coreId.U,
+    coreIdAccess -> io.coreId,
     bootAddrAccess -> bootAddr,
     configAccess -> configReg
   ))

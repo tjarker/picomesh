@@ -15,8 +15,15 @@ void _start(void) {
     SCRATCHPAD[1] = bootAddr;
     SCRATCHPAD[2] = configReg;
 
-    *CONFIG_REG = 1; // Set config reg to 1 to reset the core
-    ((void (*)(void))bootAddr)();
+    //*CONFIG_REG = 1; // Set config reg to 1 to reset the core
+    //((void (*)(void))bootAddr)();
+
+    if (coreId == 0) {
+        for (int i = 4; i < 16; i++) {
+          // shift i to bits [31:28]
+            int configRegAddr = i << 28 | 0x01000014;
+        }
+    }
 
     while (1) {
       // Loop forever

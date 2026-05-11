@@ -5,7 +5,11 @@ import s4noc.Entry
 import Util._
 import chisel3.util._
 
-class PicoNode(c: PicoRvConfig, coreId: Int) extends Module with NocNode {
+import s4noc.ChannelIO
+import s4noc.NetworkInterface
+
+
+class PicoNode(c: PicoRvConfig) extends Module with NocNode {
 
   
 
@@ -14,8 +18,12 @@ class PicoNode(c: PicoRvConfig, coreId: Int) extends Module with NocNode {
     val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse))
   })
 
+  val coreId = IO(Input(UInt(4.W)))
 
-  val pico = Module(new PicoRv(c, coreId))
+
+  val pico = Module(new PicoRv(c))
+  
+  pico.io.coreId := coreId
 
   pico.io.remoteWb.expand(
     _.cyc := io.networkPortReq.rx.valid && io.networkPortResp.tx.ready, // we wait with issuing the request until the resp.tx is ready
@@ -29,7 +37,7 @@ class PicoNode(c: PicoRvConfig, coreId: Int) extends Module with NocNode {
   io.networkPortResp.tx.expand(
     _.valid := pico.io.remoteWb.ack, // we wait with issuing the response until the resp.tx is ready, so single cycle ack is ok
     _.bits.expand(
-      _.core := coreId.U,
+      _.core := io.networkPortReq.rx.bits.core, // reply to the requesting core 
       _.data.data := pico.io.remoteWb.rdata
     )
   )
