@@ -1,10 +1,10 @@
-/* link.ld */
 ENTRY(_start)
 
 SECTIONS {
-  . = 0x00000000;
+  . = 0x08000000;
 
   .text : {
+    KEEP(*(.text._start))
     *(.text*)
   }
 

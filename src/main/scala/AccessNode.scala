@@ -35,11 +35,21 @@ class AccessNode extends Module {
     )
   )
 
-  io.networkPortReq.rx.ready := 1.B
-  io.networkPortResp.tx.valid := RegNext(io.networkPortReq.rx.valid, 0.B)
+  val bootRom = VecInit(Util.Binary.load("build/bootloader/bootloader.bin").map(_.U(32.W)))
+
+  val progRom = VecInit(Util.Binary.load("build/rom/rom.bin").map(_.U(32.W)))
+
+  val readData = Mux(
+    io.networkPortReq.rx.bits.data.addr(27),
+    progRom(io.networkPortReq.rx.bits.data.addr(26, 2)),
+    bootRom(io.networkPortReq.rx.bits.data.addr(26, 2))
+  )
+
+  io.networkPortReq.rx.ready := io.networkPortResp.tx.ready
+  io.networkPortResp.tx.valid := io.networkPortReq.rx.valid && !io.networkPortReq.rx.bits.data.write
   io.networkPortResp.tx.bits.expand(
     _.core := io.networkPortReq.rx.bits.core,
-    _.data.data := 0.U
+    _.data.data := readData
   )
 
   io.networkPortResp.rx.ready := 0.B // default

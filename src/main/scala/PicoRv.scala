@@ -179,7 +179,7 @@ class PicoRv(c: PicoRvConfig) extends Module {
    */
 
   val scratchPad = Mem(4, UInt(32.W))
-  val bootAddr = RegInit(0x2000_0000.U(32.W))
+  val bootAddr = RegInit(0x0800_0000.U(32.W))
   val scratchPadAccess = localAccessAddr(27, 4) === 0x100_000.U
   val coreIdAccess = localAccessAddr(31, 0) === 0xFFFF_0000L.U
   val bootAddrAccess = localAccessAddr(27, 0) === 0x100_0010.U

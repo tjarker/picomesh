@@ -1,0 +1,84 @@
+DESIGN_NAME: PicoMeshBigTop
+VERILOG_FILES:
+  - dir::../../generated/PicoMeshBigTop.v
+
+VDD_NETS: ["vccd1"]
+GND_NETS: ["vssd1"]
+
+CLOCK_PORT: clock
+CLOCK_PERIOD: 20
+
+TIMING_VIOLATION_CORNERS: []
+
+FP_PDN_MULTILAYER: true
+FP_PDN_CORE_RING: true
+
+DESIGN_REPAIR_MAX_SLEW_PCT: 15
+DESIGN_REPAIR_MAX_CAP_PCT: 15
+GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 15
+GRT_DESIGN_REPAIR_MAX_CAP_PCT: 15
+RUN_ANTENNA_REPAIR: true
+GRT_ANTENNA_ITERS: 20
+
+MAGIC_CAPTURE_ERRORS: false
+PRIMARY_GDSII_STREAMOUT_TOOL: "klayout"
+RUN_KLAYOUT_DRC: true
+RUN_MAGIC_DRC: false
+RUN_KLAYOUT_XOR: false
+
+
+GRT_ALLOW_CONGESTION: true
+
+PL_TARGET_DENSITY_PCT: 60
+FP_CORE_UTIL: 60
+FP_PIN_ORDER_CFG: dir::pin_order.cfg
+FP_SIZING: absolute
+DIE_AREA: [0, 0, 2700, 1400]
+SYNTH_AUTONAME: true
+
+MACROS:
+  sky130_sram_1kbyte_1rw1r_32x256_8:
+    instances:
+      mesh.memLow.mem:
+        location: [811, 15]
+        orientation: S
+      mesh.memHigh.mem:
+        location: [1408, 15]
+        orientation: S
+    gds: pdk_dir::libs.ref/sky130_sram_macros/gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
+    lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
+    nl: pdk_dir::libs.ref/sky130_sram_macros/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v
+  PicoNode:
+    instances:
+      mesh.cores_0:
+        location: [40, 15]
+        orientation: S
+      mesh.cores_1:
+        location: [2005, 15]
+        orientation: S
+      mesh.cores_2:
+        location: [40, 1115]
+        orientation: N
+      mesh.cores_3:
+        location: [695, 1115]
+        orientation: N
+      mesh.cores_4:
+        location: [1350, 1115]
+        orientation: N
+      mesh.cores_5:
+        location: [2005, 1115]
+        orientation: N
+    gds: dir::../../build/layout/PicoNode/gds/PicoNode.gds
+    lef: dir::../../build/layout/PicoNode/lef/PicoNode.lef
+    nl: dir::../../build/layout/PicoNode/pnl/PicoNode.pnl.v
+    lib:
+      "*": dir::../../build/layout/PicoNode/lib/nom_tt_025C_1v80/PicoNode__nom_tt_025C_1v80.lib
+PDN_MACRO_CONNECTIONS:
+  - "mesh.memLow.mem vccd1 vssd1 vccd1 vssd1"
+  - "mesh.memHigh.mem vccd1 vssd1 vccd1 vssd1"
+  - "mesh.cores_0 vccd1 vssd1 vccd1 vssd1"
+  - "mesh.cores_1 vccd1 vssd1 vccd1 vssd1"
+  - "mesh.cores_2 vccd1 vssd1 vccd1 vssd1"
+  - "mesh.cores_3 vccd1 vssd1 vccd1 vssd1"
+  - "mesh.cores_4 vccd1 vssd1 vccd1 vssd1"
+  - "mesh.cores_5 vccd1 vssd1 vccd1 vssd1"

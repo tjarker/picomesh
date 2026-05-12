@@ -16,7 +16,7 @@ class RomNode(program: Seq[BigInt]) extends Module with NocNode {
 
   io.networkPortReq.rx.ready := io.networkPortResp.tx.ready
   io.networkPortResp.tx.expand(
-    _.valid := io.networkPortReq.rx.valid,
+    _.valid := io.networkPortReq.rx.valid && !io.networkPortReq.rx.bits.data.write,
     _.bits.expand(
       _.core := io.networkPortReq.rx.bits.core,
       _.data.data := rom(io.networkPortReq.rx.bits.data.addr(31, 2))

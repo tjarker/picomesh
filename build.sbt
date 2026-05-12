@@ -18,3 +18,5 @@ Compile / unmanagedSourceDirectories += baseDirectory.value / "ip-contributions/
 
 libraryDependencies += "com.fazecast" % "jSerialComm" % "[2.0.0,3.0.0)"
 libraryDependencies += "net.fornwall" % "jelf" % "0.9.0"
+
+libraryDependencies += "io.github.tjarker" %% "liftoff" % "0.0.1"

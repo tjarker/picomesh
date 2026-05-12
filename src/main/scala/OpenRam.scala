@@ -20,5 +20,5 @@ class sky130_sram_1kbyte_1rw1r_32x256_8 extends BlackBox with HasBlackBoxPath {
     val dout1 = Output(UInt(32.W))
   })
 
-  addPath("src/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v")
+  addPath("src/verilog/sram_model.v")
 }

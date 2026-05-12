@@ -14,22 +14,22 @@ class MemoryNode extends Module with NocNode {
 
   val readData = mem.read(io.networkPortReq.rx.bits.data.addr(31, 2))
 
-  io.networkPortReq.rx.ready := io.networkPortResp.tx.ready
+  val reqReg = RegInit(0.B)
+
+  when(reqReg && io.networkPortResp.tx.ready) {
+    reqReg := 0.B
+  }.elsewhen(io.networkPortReq.rx.valid && !io.networkPortReq.rx.bits.data.write) {
+    reqReg := 1.B
+  }
+
+  io.networkPortReq.rx.ready := (io.networkPortResp.tx.ready && reqReg) || (!reqReg && io.networkPortReq.rx.bits.data.write)
   io.networkPortResp.tx.expand(
-    _.valid := RegNext(io.networkPortReq.rx.valid && !io.networkPortReq.rx.bits.data.write, 0.B),
+    _.valid := reqReg,
     _.bits.expand(
-      _.core := RegNext(io.networkPortReq.rx.bits.core),
+      _.core := io.networkPortReq.rx.bits.core,
       _.data.data := readData
     )
   )
-
-  // write 
-  when(io.networkPortReq.rx.valid && io.networkPortReq.rx.bits.data.write) {
-    mem.write(
-      io.networkPortReq.rx.bits.data.addr(31, 2),
-      io.networkPortReq.rx.bits.data.data
-    )
-  }
 
   io.networkPortReq.tx.expand(
     _.valid := 0.B,
@@ -39,6 +39,16 @@ class MemoryNode extends Module with NocNode {
     )
   )
   io.networkPortResp.rx.ready := 0.B
+
+ 
+
+  // write 
+  when(io.networkPortReq.rx.valid && io.networkPortReq.rx.bits.data.write) {
+    mem.write(
+      io.networkPortReq.rx.bits.data.addr(31, 2),
+      io.networkPortReq.rx.bits.data.data
+    )
+  }
 
 }
 
@@ -52,7 +62,7 @@ class OpenRamMemoryNode extends Module with NocNode {
 
   mem.io.clk0 := clock
   mem.io.csb0 := 0.B
-  mem.io.web0 := !io.networkPortReq.rx.bits.data.write && io.networkPortReq.rx.valid
+  mem.io.web0 := !(io.networkPortReq.rx.bits.data.write && io.networkPortReq.rx.valid)
   mem.io.wmask0 := io.networkPortReq.rx.bits.data.mask
   mem.io.addr0 := io.networkPortReq.rx.bits.data.addr(9, 2)
   mem.io.din0 := io.networkPortReq.rx.bits.data.data
@@ -70,7 +80,7 @@ class OpenRamMemoryNode extends Module with NocNode {
     reqReg := 1.B
   }
 
-  io.networkPortReq.rx.ready := io.networkPortResp.tx.ready && reqReg
+  io.networkPortReq.rx.ready := (io.networkPortResp.tx.ready && reqReg) || (!reqReg && io.networkPortReq.rx.bits.data.write)
   io.networkPortResp.tx.expand(
     _.valid := reqReg,
     _.bits.expand(

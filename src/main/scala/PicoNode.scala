@@ -35,7 +35,7 @@ class PicoNode(c: PicoRvConfig) extends Module with NocNode {
   )
   io.networkPortReq.rx.ready := io.networkPortResp.tx.ready && pico.io.remoteWb.ack
   io.networkPortResp.tx.expand(
-    _.valid := pico.io.remoteWb.ack, // we wait with issuing the response until the resp.tx is ready, so single cycle ack is ok
+    _.valid := pico.io.remoteWb.ack && !io.networkPortReq.rx.bits.data.write, // we wait with issuing the response until the resp.tx is ready, so single cycle ack is ok
     _.bits.expand(
       _.core := io.networkPortReq.rx.bits.core, // reply to the requesting core 
       _.data.data := pico.io.remoteWb.rdata

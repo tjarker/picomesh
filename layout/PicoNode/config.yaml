@@ -1,7 +1,7 @@
 DESIGN_NAME: PicoNode
 VERILOG_FILES:
   - dir::../../generated/picorv32.v
-  - dir::../../generated/PicoMeshTop.v
+  - dir::../../generated/PicoMeshBigTop.v
 
 VDD_NETS: ["vccd1"]
 GND_NETS: ["vssd1"]
@@ -10,6 +10,10 @@ CLOCK_PORT: clock
 CLOCK_PERIOD: 20
 
 TIMING_VIOLATION_CORNERS: []
+
+FP_PDN_MULTILAYER: true
+FP_PDN_CORE_RING: true
+
 
 # DESIGN_REPAIR_MAX_SLEW_PCT: 12
 # DESIGN_REPAIR_MAX_CAP_PCT: 12
@@ -20,12 +24,12 @@ TIMING_VIOLATION_CORNERS: []
 
 #GRT_ALLOW_CONGESTION: true
 
-#PL_TARGET_DENSITY: 0.7
-FP_CORE_UTIL: 50
+PL_TARGET_DENSITY_PCT: 66
+FP_CORE_UTIL: 66
 FP_ASPECT_RATIO: 0.6
 FP_PIN_ORDER_CFG: dir::pin_order.cfg
 FP_SIZING: absolute
-DIE_AREA: [0, 0, 590, 370]
+DIE_AREA: [0, 0, 667, 265]
 SYNTH_AUTONAME: true
 #FP_DEF_TEMPLATE: template.def
 # FP_OBSTRUCTIONS:
