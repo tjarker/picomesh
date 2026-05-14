@@ -1,6 +1,5 @@
-DESIGN_NAME: PicoNode
+DESIGN_NAME: S4NoC
 VERILOG_FILES:
-  - dir::../../generated/picorv32.v
   - dir::../../generated/PicoMeshBigTop.v
 
 VDD_NETS: ["vccd1"]
@@ -24,12 +23,12 @@ FP_PDN_CORE_RING: true
 
 #GRT_ALLOW_CONGESTION: true
 
-PL_TARGET_DENSITY_PCT: 66
-FP_CORE_UTIL: 66
+#PL_TARGET_DENSITY_PCT: 66
+FP_CORE_UTIL: 40
 FP_ASPECT_RATIO: 0.6
-FP_PIN_ORDER_CFG: dir::pin_order.cfg
-FP_SIZING: absolute
-DIE_AREA: [0, 0, 665, 265]
+#FP_PIN_ORDER_CFG: dir::pin_order.cfg
+#FP_SIZING: absolute
+#DIE_AREA: [0, 0, 665, 265]
 SYNTH_AUTONAME: true
 #FP_DEF_TEMPLATE: template.def
 # FP_OBSTRUCTIONS:

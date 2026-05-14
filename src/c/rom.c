@@ -18,17 +18,17 @@ void _start(void) {
   } // wait for write to scratchpad
 
   if (coreId != 0) {
-    scratchpad(coreId == 5 ? 0 : coreId + 1)[0] = scratchpad(coreId)[0] + 1; // write to next core's scratchpad
+    scratchpad(coreId == 5 ? 0 : coreId + 1)[0] = localScratchpad[0] + coreId;
   }
 
   if (coreId == 0) {
+    MEM[6] = localScratchpad[0]; // place result in memory
     for (int i = 0; i < 6; i++) {
-      scratchpad(i)[0] += 0x2220000;
-      MEM[i] += 0x3330000;
+      scratchpad(i)[0] += 0x2220000; // test readback and update
+      MEM[i] += 0x3330000; // test readback and update
     }
   }
   // reset yourself
-
   *local_config_reg() = 0x1; // write to config reg to reset core
 
   while (1) {

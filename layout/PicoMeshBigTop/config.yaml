@@ -13,10 +13,10 @@ TIMING_VIOLATION_CORNERS: []
 FP_PDN_MULTILAYER: true
 FP_PDN_CORE_RING: true
 
-DESIGN_REPAIR_MAX_SLEW_PCT: 15
-DESIGN_REPAIR_MAX_CAP_PCT: 15
-GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 15
-GRT_DESIGN_REPAIR_MAX_CAP_PCT: 15
+DESIGN_REPAIR_MAX_SLEW_PCT: 13
+DESIGN_REPAIR_MAX_CAP_PCT: 13
+GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 13
+GRT_DESIGN_REPAIR_MAX_CAP_PCT: 13
 RUN_ANTENNA_REPAIR: true
 GRT_ANTENNA_ITERS: 20
 
@@ -29,12 +29,13 @@ RUN_KLAYOUT_XOR: false
 
 GRT_ALLOW_CONGESTION: true
 
-PL_TARGET_DENSITY_PCT: 60
-FP_CORE_UTIL: 60
+PL_TARGET_DENSITY_PCT: 47
+FP_CORE_UTIL: 47
 FP_PIN_ORDER_CFG: dir::pin_order.cfg
 FP_SIZING: absolute
-DIE_AREA: [0, 0, 2700, 1400]
+DIE_AREA: [0, 0, 2700, 1200]
 SYNTH_AUTONAME: true
+#PL_MAX_PHI_COEFFICIENT: 1.00
 
 MACROS:
   sky130_sram_1kbyte_1rw1r_32x256_8:
@@ -51,22 +52,22 @@ MACROS:
   PicoNode:
     instances:
       mesh.cores_0:
-        location: [40, 15]
+        location: [20, 15]
         orientation: S
       mesh.cores_1:
-        location: [2005, 15]
+        location: [2015, 15]
         orientation: S
       mesh.cores_2:
-        location: [40, 1115]
+        location: [20, 915]
         orientation: N
       mesh.cores_3:
-        location: [695, 1115]
+        location: [685, 915]
         orientation: N
       mesh.cores_4:
-        location: [1350, 1115]
+        location: [1350, 915]
         orientation: N
       mesh.cores_5:
-        location: [2005, 1115]
+        location: [2015, 915]
         orientation: N
     gds: dir::../../build/layout/PicoNode/gds/PicoNode.gds
     lef: dir::../../build/layout/PicoNode/lef/PicoNode.lef

@@ -1,0 +1,82 @@
+DESIGN_NAME: PicoMeshTop
+VERILOG_FILES:
+  - dir::../../generated/PicoMeshTop.v
+
+VDD_NETS: ["vccd1"]
+GND_NETS: ["vssd1"]
+
+CLOCK_PORT: clock
+CLOCK_PERIOD: 20
+
+TIMING_VIOLATION_CORNERS: []
+
+FP_PDN_MULTILAYER: true
+FP_PDN_CORE_RING: true
+
+DESIGN_REPAIR_MAX_SLEW_PCT: 15
+DESIGN_REPAIR_MAX_CAP_PCT: 15
+GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 15
+GRT_DESIGN_REPAIR_MAX_CAP_PCT: 15
+RUN_ANTENNA_REPAIR: true
+GRT_ANTENNA_ITERS: 20
+
+MAGIC_CAPTURE_ERRORS: false
+PRIMARY_GDSII_STREAMOUT_TOOL: "klayout"
+RUN_KLAYOUT_DRC: true
+RUN_MAGIC_DRC: false
+RUN_KLAYOUT_XOR: false
+
+#PL_TARGET_DENSITY: 0.5
+#FP_CORE_UTIL: 30
+FP_PIN_ORDER_CFG: dir::pin_order.cfg
+FP_SIZING: absolute
+DIE_AREA: [0, 0, 1400, 1100]
+SYNTH_AUTONAME: true
+PL_TARGET_DENSITY: 0.55
+#FP_DEF_TEMPLATE: template.def
+# FP_OBSTRUCTIONS:
+#   - [330, 330, 550, 550]
+# ROUTING_OBSTRUCTIONS:
+#   - "met1 330 330 550 550"
+#   - "met2 330 330 550 550"
+#   - "met3 330 330 550 550"
+#   - "met4 330 330 550 550"
+#   - "met5 330 330 550 550"
+# PDN_OBSTRUCTIONS:
+#   - "met4 330 330 550 550"
+#   - "met5 330 330 550 550"
+# SYNTH_AUTONAME: true
+# SYNTH_HIERARCHY_MODE: keep
+#SYNTH_SIZING: true
+#SYNTH_STRATEGY: "DELAY 0"
+
+MACROS:
+  sky130_sram_1kbyte_1rw1r_32x256_8:
+    instances:
+      mesh.mem.mem:
+        location: [360, 20]
+        orientation: S
+    gds: pdk_dir::libs.ref/sky130_sram_macros/gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
+    lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
+    nl: pdk_dir::libs.ref/sky130_sram_macros/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v
+  PicoNode:
+    instances:
+      mesh.core0:
+        location: [100, 650]
+        orientation: N
+      mesh.core1:
+        location: [690, 650]
+        orientation: FN
+    gds: dir::../../build/layout/PicoNode/gds/PicoNode.gds
+    lef: dir::../../build/layout/PicoNode/lef/PicoNode.lef
+    nl: dir::../../build/layout/PicoNode/pnl/PicoNode.pnl.v
+    lib:
+      "*": dir::../../build/layout/PicoNode/lib/nom_tt_025C_1v80/PicoNode__nom_tt_025C_1v80.lib
+PDN_MACRO_CONNECTIONS:
+  - "mesh.mem.mem vccd1 vssd1 vccd1 vssd1"
+  - "mesh.core0 vccd1 vssd1 vccd1 vssd1"
+  - "mesh.core1 vccd1 vssd1 vccd1 vssd1"
+# PL_WIRE_LENGTH_COEF: 0.10
+# DESIGN_REPAIR_MAX_WIRE_LENGTH: 300
+# GRT_ANTENNA_MARGIN: 25
+# GRT_ANTENNA_ITERS: 40

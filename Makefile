@@ -22,11 +22,25 @@ harden-pico-mesh-big:
 	@rm -rf layout/PicoMeshBigTop/runs build/layout/PicoMeshBigTop
 	$(NIX_RUN) --save-views-to build/layout/PicoMeshBigTop --run-tag harden layout/PicoMeshBigTop/config.yaml
 
+pico-mesh-reset:
+	@rm -rf layout/PicoMeshBigTop/runs build/layout/PicoMeshBigTop
+
+pico-mesh-synth:
+	${NIX_RUN} --run-tag harden --to "Checker.NetlistAssignStatements" layout/PicoMeshBigTop/config.yaml
+
+pico-mesh-layout:
+	${NIX_RUN} --run-tag harden --from "OpenROAD.CheckSDCFiles" --save-views-to build/layout/PicoMeshBigTop layout/PicoMeshBigTop/config.yaml
+
 openroad-pico-mesh-big:
 	${NIX_RUN}--last-run --flow OpenInOpenROAD layout/PicoMeshBigTop/config.yaml
 
 klayout-pico-mesh-big:
 	${NIX_RUN}--last-run --flow OpenInKLayout layout/PicoMeshBigTop/config.yaml
+
+
+s4noc-req-harden:
+	@rm -rf layout/S4NocReq/runs build/layout/S4NocReq
+	$(NIX_RUN) --save-views-to build/layout/S4NocReq --run-tag harden layout/S4NocReq/config.yaml
 
 comp: comp-bootloader comp-rom comp-app
 

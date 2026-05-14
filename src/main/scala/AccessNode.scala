@@ -68,10 +68,11 @@ class AccessNode extends Module {
       io.networkPortReq.tx.valid := 1.B
 
       when(io.networkPortReq.tx.ready) {
-        state := State.WaitResp
+        state := Mux(io.pontePort.write, State.Idle, State.WaitResp)
       }
     }
     is(State.WaitResp) {
+      io.networkPortResp.rx.ready := 1.B
       when(io.networkPortResp.rx.valid) {
         state := State.Idle
         io.pontePort.done := 1.B

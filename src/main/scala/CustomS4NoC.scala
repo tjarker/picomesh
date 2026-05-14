@@ -4,7 +4,7 @@ import s4noc._
 
 import Util._
 
-class S4NoC[T <: Data](nodes: Int, dt: => T) extends Module  {
+class CustomS4NoC[T <: Data](nodes: Int, dt: => T) extends Module  {
 
   val conf = Config(nodes, 
     BubbleType(1),
@@ -22,7 +22,7 @@ class S4NoC[T <: Data](nodes: Int, dt: => T) extends Module  {
 
   for (i <- 0 until conf.n) {
     // can use NetworkInterfaceSingle for paper numbers
-    val ni = Module(new NetworkInterface(i, conf, dt))
+    val ni = Module(new CustomNetworkInterface(i, conf, dt))
     net.io.local(i) <> ni.io.local
     io.networkPort(i) <> ni.io.networkPort
   }
