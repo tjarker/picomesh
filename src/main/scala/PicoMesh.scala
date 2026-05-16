@@ -130,7 +130,7 @@ class PicoMeshBig(c: PicoRvConfig) extends Module {
 
   // val romNode = Module(new RomNode(Util.Binary.load("build/prog/program.bin")))
   val memLow = Module(new OpenRamMemoryNode)
-  val memHigh = Module(new OpenRamAndRomMemoryNode)
+  val memHigh = Module(new OpenRamMemoryNode)
   val accessNode = Module(new AccessNode)
   io.pontePort <> accessNode.io.pontePort
 

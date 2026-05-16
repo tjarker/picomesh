@@ -6,12 +6,15 @@ VDD_NETS: ["vccd1"]
 GND_NETS: ["vssd1"]
 
 CLOCK_PORT: clock
-CLOCK_PERIOD: 20
+CLOCK_PERIOD: 50
 
 TIMING_VIOLATION_CORNERS: []
 
 FP_PDN_MULTILAYER: true
 FP_PDN_CORE_RING: true
+
+#GRT_RESIZER_HOLD_SLACK_MARGIN: 0.1
+#PL_RESIZER_HOLD_SLACK_MARGIN: 0.3
 
 DESIGN_REPAIR_MAX_SLEW_PCT: 13
 DESIGN_REPAIR_MAX_CAP_PCT: 13
@@ -27,24 +30,27 @@ RUN_MAGIC_DRC: false
 RUN_KLAYOUT_XOR: false
 
 
-#GRT_ALLOW_CONGESTION: true
+GRT_ALLOW_CONGESTION: true
 
-PL_TARGET_DENSITY_PCT: 40
-FP_CORE_UTIL: 20
+PL_TARGET_DENSITY_PCT: 39
+#FP_CORE_UTIL: 25
 FP_PIN_ORDER_CFG: dir::pin_order.cfg
 FP_SIZING: absolute
-DIE_AREA: [0, 0, 2700, 1200]
-SYNTH_AUTONAME: true
-#PL_MAX_PHI_COEFFICIENT: 1.00
+DIE_AREA: [0, 0, 2700, 1205]
+#SYNTH_AUTONAME: true
+PL_MAX_PHI_COEFFICIENT: 1.07
+
+FP_PDN_HPITCH: 100
+FP_PDN_VPITCH: 100
 
 MACROS:
   sky130_sram_1kbyte_1rw1r_32x256_8:
     instances:
       mesh.memLow.mem:
-        location: [811, 15]
+        location: [811, 7]
         orientation: S
       mesh.memHigh.mem:
-        location: [1408, 15]
+        location: [1408, 7]
         orientation: S
     gds: pdk_dir::libs.ref/sky130_sram_macros/gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
     lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
@@ -52,22 +58,22 @@ MACROS:
   PicoNode:
     instances:
       mesh.cores_0:
-        location: [20, 15]
+        location: [37, 0]
         orientation: S
       mesh.cores_1:
-        location: [2015, 15]
+        location: [2023, 0]
         orientation: S
       mesh.cores_2:
-        location: [20, 915]
+        location: [37, 1030]
         orientation: N
       mesh.cores_3:
-        location: [685, 915]
+        location: [677, 1030]
         orientation: N
       mesh.cores_4:
-        location: [1350, 915]
+        location: [1383, 1030]
         orientation: N
       mesh.cores_5:
-        location: [2015, 915]
+        location: [2023, 1030]
         orientation: N
     gds: dir::../../build/layout/PicoNode/gds/PicoNode.gds
     lef: dir::../../build/layout/PicoNode/lef/PicoNode.lef

@@ -1,11 +1,13 @@
 
+all: comp verilog harden-pico-node pico-mesh-synth pico-mesh-layout
+
 verilog:
-	sbt "runMain PicoMesh"
+	sbt "runMain PicoMeshBigTop"
 
 NIX_RUN=nix run github:chipfoundry/openlane-2/CI2511 -- 
 
 harden-pico-node:
-	@rm -rf layout/PicoNode/runs build/layout/PicoNode
+	@rm -rf layout/PicoNode/runs
 	$(NIX_RUN) --save-views-to build/layout/PicoNode --run-tag harden layout/PicoNode/config.yaml
 
 openroad-pico-node:
@@ -14,16 +16,8 @@ openroad-pico-node:
 klayout-pico-node:
 	${NIX_RUN}--last-run --flow OpenInKLayout layout/PicoNode/config.yaml
 
-harden-pico-mesh:
-	@rm -rf layout/PicoMeshTop/runs build/layout/PicoMeshTop
-	$(NIX_RUN) --save-views-to build/layout/PicoMeshTop --run-tag harden layout/PicoMeshTop/config.yaml
-
-harden-pico-mesh-big:
-	@rm -rf layout/PicoMeshBigTop/runs build/layout/PicoMeshBigTop
-	$(NIX_RUN) --save-views-to build/layout/PicoMeshBigTop --run-tag harden layout/PicoMeshBigTop/config.yaml
-
 pico-mesh-reset:
-	@rm -rf layout/PicoMeshBigTop/runs build/layout/PicoMeshBigTop
+	@rm -rf layout/PicoMeshBigTop/runs
 
 pico-mesh-synth:
 	${NIX_RUN} --run-tag harden --to "Checker.NetlistAssignStatements" layout/PicoMeshBigTop/config.yaml
@@ -31,16 +25,11 @@ pico-mesh-synth:
 pico-mesh-layout:
 	${NIX_RUN} --run-tag harden --from "OpenROAD.CheckSDCFiles" --save-views-to build/layout/PicoMeshBigTop layout/PicoMeshBigTop/config.yaml
 
-openroad-pico-mesh-big:
+openroad-pico-mesh:
 	${NIX_RUN}--last-run --flow OpenInOpenROAD layout/PicoMeshBigTop/config.yaml
 
-klayout-pico-mesh-big:
+klayout-pico-mesh:
 	${NIX_RUN}--last-run --flow OpenInKLayout layout/PicoMeshBigTop/config.yaml
-
-
-s4noc-req-harden:
-	@rm -rf layout/S4NocReq/runs build/layout/S4NocReq
-	$(NIX_RUN) --save-views-to build/layout/S4NocReq --run-tag harden layout/S4NocReq/config.yaml
 
 comp: comp-bootloader comp-rom comp-app
 
