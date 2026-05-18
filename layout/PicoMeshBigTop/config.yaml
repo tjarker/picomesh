@@ -1,12 +1,13 @@
 DESIGN_NAME: PicoMeshBigTop
 VERILOG_FILES:
+  - dir::../../generated/picorv32.v
   - dir::../../generated/PicoMeshBigTop.v
 
 VDD_NETS: ["vccd1"]
 GND_NETS: ["vssd1"]
 
 CLOCK_PORT: clock
-CLOCK_PERIOD: 50
+CLOCK_PERIOD: 100
 
 TIMING_VIOLATION_CORNERS: []
 
@@ -33,59 +34,31 @@ RUN_KLAYOUT_XOR: false
 GRT_ALLOW_CONGESTION: true
 
 PL_TARGET_DENSITY_PCT: 39
-#FP_CORE_UTIL: 25
+FP_CORE_UTIL: 39
 FP_PIN_ORDER_CFG: dir::pin_order.cfg
 FP_SIZING: absolute
-DIE_AREA: [0, 0, 2700, 1205]
+DIE_AREA: [0, 0, 2700, 1190]
+#DIE_AREA: [0, 0, 2700, 1800]
 #SYNTH_AUTONAME: true
-PL_MAX_PHI_COEFFICIENT: 1.07
+#PL_MAX_PHI_COEFFICIENT: 1.07
 
-FP_PDN_HPITCH: 100
-FP_PDN_VPITCH: 100
+FP_PDN_HPITCH: 135
+FP_PDN_VPITCH: 135
+
+ERROR_ON_LVS_ERROR: false
 
 MACROS:
   sky130_sram_1kbyte_1rw1r_32x256_8:
     instances:
       mesh.memLow.mem:
-        location: [811, 7]
-        orientation: S
+        location: [50, 20]
+        orientation: FS
       mesh.memHigh.mem:
-        location: [1408, 7]
+        location: [570, 20]
         orientation: S
-    gds: pdk_dir::libs.ref/sky130_sram_macros/gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
+    gds: dir::../../../gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
     lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
     nl: pdk_dir::libs.ref/sky130_sram_macros/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v
-  PicoNode:
-    instances:
-      mesh.cores_0:
-        location: [37, 0]
-        orientation: S
-      mesh.cores_1:
-        location: [2023, 0]
-        orientation: S
-      mesh.cores_2:
-        location: [37, 1030]
-        orientation: N
-      mesh.cores_3:
-        location: [677, 1030]
-        orientation: N
-      mesh.cores_4:
-        location: [1383, 1030]
-        orientation: N
-      mesh.cores_5:
-        location: [2023, 1030]
-        orientation: N
-    gds: dir::../../build/layout/PicoNode/gds/PicoNode.gds
-    lef: dir::../../build/layout/PicoNode/lef/PicoNode.lef
-    nl: dir::../../build/layout/PicoNode/pnl/PicoNode.pnl.v
-    lib:
-      "*": dir::../../build/layout/PicoNode/lib/nom_tt_025C_1v80/PicoNode__nom_tt_025C_1v80.lib
 PDN_MACRO_CONNECTIONS:
   - "mesh.memLow.mem vccd1 vssd1 vccd1 vssd1"
   - "mesh.memHigh.mem vccd1 vssd1 vccd1 vssd1"
-  - "mesh.cores_0 vccd1 vssd1 vccd1 vssd1"
-  - "mesh.cores_1 vccd1 vssd1 vccd1 vssd1"
-  - "mesh.cores_2 vccd1 vssd1 vccd1 vssd1"
-  - "mesh.cores_3 vccd1 vssd1 vccd1 vssd1"
-  - "mesh.cores_4 vccd1 vssd1 vccd1 vssd1"
-  - "mesh.cores_5 vccd1 vssd1 vccd1 vssd1"

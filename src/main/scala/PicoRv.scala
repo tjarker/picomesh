@@ -55,73 +55,23 @@ object PicoRv {
 
 import PicoRv._
 
-class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
-  "ENABLE_COUNTERS" -> c.enableCounters.toInt,
-  "ENABLE_COUNTERS64" -> c.enableCounters64.toInt,
-  "ENABLE_REGS_16_31" -> c.enableRegs16_31.toInt,
-  "ENABLE_REGS_DUALPORT" -> c.enableRegsDualPort.toInt,
-  "TWO_STAGE_SHIFT" -> c.twoStageShift.toInt,
-  "BARREL_SHIFTER" -> c.barrelShifter.toInt,
-  "TWO_CYCLE_COMPARE" -> c.twoCycleCompare.toInt,
-  "TWO_CYCLE_ALU" -> c.twoCycleAlu.toInt,
-  "COMPRESSED_ISA" -> c.compressedIsa.toInt,
-  "CATCH_MISALIGN" -> c.catchMisaligned.toInt,
-  "CATCH_ILLINSN" -> c.catchIllegalInstruction.toInt,
-  "ENABLE_PCPI" -> c.enablePcpi.toInt,
-  "ENABLE_MUL" -> c.enableMul.toInt,
-  "ENABLE_FAST_MUL" -> c.enableFastMul.toInt,
-  "ENABLE_DIV" -> c.enableDiv.toInt,
-  "ENABLE_IRQ" -> c.enableIrq.toInt,
-  "ENABLE_IRQ_QREGS" -> c.enableIrqQregs.toInt,
-  "ENABLE_IRQ_TIMER" -> c.enableIrqTimer.toInt,
-  "ENABLE_TRACE" -> c.enableTrace.toInt,
-  "REGS_INIT_ZERO" -> c.regsInitZero.toInt,
-  "MASKED_IRQ" -> c.maskedIrq,
-  "LATCHED_IRQ" -> c.latchedIrq,
-  "PROGADDR_RESET" -> c.progAddrReset,
-  "PROGADDR_IRQ" -> c.progAddrIrq,
-  "STACKADDR" -> c.stackAddr
 
-)) with HasBlackBoxPath {
-  val io = IO(new Bundle {
-
-    val trap = Output(Bool())
-
-    val wb_rst_i = Input(Bool())
-    val wb_clk_i = Input(Clock())
-
-    val wbm_cyc_o = Output(Bool())
-    val wbm_stb_o = Output(Bool())
-    val wbm_we_o = Output(Bool())
-    val wbm_sel_o = Output(UInt(4.W))
-    val wbm_adr_o = Output(UInt(32.W))
-    val wbm_dat_o = Output(UInt(32.W))
-    val wbm_dat_i = Input(UInt(32.W))
-    val wbm_ack_i = Input(Bool())
-
-    val pcpi_valid = Output(Bool())
-    val pcpi_insn = Output(UInt(32.W))
-    val pcpi_rs1 = Output(UInt(32.W))
-    val pcpi_rs2 = Output(UInt(32.W))
-    val pcpi_wr = Input(Bool())
-    val pcpi_rd = Input(UInt(32.W))
-    val pcpi_wait = Input(Bool())
-    val pcpi_ready = Input(Bool())
-
-    val irq = Input(UInt(32.W))
-    val eoi = Output(UInt(32.W))
-
-    val trace_valid = Output(Bool())
-    val trace_data = Output(UInt(36.W))
-
-    val mem_instr = Output(Bool())
-  })
-
-  override val desiredName: String = "picorv32_wb"
-  addPath("src/verilog/picorv32.v")
-}
-
-
+/**
+  * A wrapper around picorv32_wb with a local scratchpad (4x32 bit), boot address register, and reset control register.
+  * 
+  * Internal memory map (local to each core):
+  * 0xFFFF_0000: Core ID (read-only)
+  * 0x?100_0000: Scratchpad[0]
+  * 0x?100_0004: Scratchpad[1]
+  * 0x?100_0008: Scratchpad[2]
+  * 0x?100_000C: Scratchpad[3]
+  * 0x?100_0010: Boot Address (read/write)
+  * 0x?100_0014: Config (read/write)
+  * 
+  * The `remoteWb` interface allows external accesses to the core's local memory map. External accesses take priority over the core's own accesses.
+  *
+  * @param c config
+  */
 class PicoRv(c: PicoRvConfig) extends Module {
 
   val io = IO(new Bundle {
@@ -143,9 +93,6 @@ class PicoRv(c: PicoRvConfig) extends Module {
   core.io.wb_clk_i := clock
   core.io.wb_rst_i := reset.asBool || configReg(0) 
   core.io.irq := 0.U
-
-
-  
 
 
   val isLocalAccess = core.io.wbm_adr_o(31, 28) === io.coreId || core.io.wbm_adr_o === 0xFFFF_0000L.U
@@ -214,86 +161,68 @@ class PicoRv(c: PicoRvConfig) extends Module {
 
 }
 
+class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
+  "ENABLE_COUNTERS" -> c.enableCounters.toInt,
+  "ENABLE_COUNTERS64" -> c.enableCounters64.toInt,
+  "ENABLE_REGS_16_31" -> c.enableRegs16_31.toInt,
+  "ENABLE_REGS_DUALPORT" -> c.enableRegsDualPort.toInt,
+  "TWO_STAGE_SHIFT" -> c.twoStageShift.toInt,
+  "BARREL_SHIFTER" -> c.barrelShifter.toInt,
+  "TWO_CYCLE_COMPARE" -> c.twoCycleCompare.toInt,
+  "TWO_CYCLE_ALU" -> c.twoCycleAlu.toInt,
+  "COMPRESSED_ISA" -> c.compressedIsa.toInt,
+  "CATCH_MISALIGN" -> c.catchMisaligned.toInt,
+  "CATCH_ILLINSN" -> c.catchIllegalInstruction.toInt,
+  "ENABLE_PCPI" -> c.enablePcpi.toInt,
+  "ENABLE_MUL" -> c.enableMul.toInt,
+  "ENABLE_FAST_MUL" -> c.enableFastMul.toInt,
+  "ENABLE_DIV" -> c.enableDiv.toInt,
+  "ENABLE_IRQ" -> c.enableIrq.toInt,
+  "ENABLE_IRQ_QREGS" -> c.enableIrqQregs.toInt,
+  "ENABLE_IRQ_TIMER" -> c.enableIrqTimer.toInt,
+  "ENABLE_TRACE" -> c.enableTrace.toInt,
+  "REGS_INIT_ZERO" -> c.regsInitZero.toInt,
+  "MASKED_IRQ" -> c.maskedIrq,
+  "LATCHED_IRQ" -> c.latchedIrq,
+  "PROGADDR_RESET" -> c.progAddrReset,
+  "PROGADDR_IRQ" -> c.progAddrIrq,
+  "STACKADDR" -> c.stackAddr
 
-class PicoRv2(c: PicoRvConfig) extends Module {
-
+)) with HasBlackBoxPath {
   val io = IO(new Bundle {
-    val mem = new MemoryPort
+
+    val trap = Output(Bool())
+
+    val wb_rst_i = Input(Bool())
+    val wb_clk_i = Input(Clock())
+
+    val wbm_cyc_o = Output(Bool())
+    val wbm_stb_o = Output(Bool())
+    val wbm_we_o = Output(Bool())
+    val wbm_sel_o = Output(UInt(4.W))
+    val wbm_adr_o = Output(UInt(32.W))
+    val wbm_dat_o = Output(UInt(32.W))
+    val wbm_dat_i = Input(UInt(32.W))
+    val wbm_ack_i = Input(Bool())
+
+    val pcpi_valid = Output(Bool())
+    val pcpi_insn = Output(UInt(32.W))
+    val pcpi_rs1 = Output(UInt(32.W))
+    val pcpi_rs2 = Output(UInt(32.W))
+    val pcpi_wr = Input(Bool())
+    val pcpi_rd = Input(UInt(32.W))
+    val pcpi_wait = Input(Bool())
+    val pcpi_ready = Input(Bool())
+
+    val irq = Input(UInt(32.W))
+    val eoi = Output(UInt(32.W))
+
+    val trace_valid = Output(Bool())
+    val trace_data = Output(UInt(36.W))
+
+    val mem_instr = Output(Bool())
   })
 
-  val core = Module(new PicoRvBlackBox(c))
-
-  core.io.wb_clk_i := clock
-  core.io.wb_rst_i := reset
-
-  core.io.pcpi_wait := 0.B
-  core.io.pcpi_ready := 0.B
-  core.io.pcpi_wr := 0.B
-  core.io.pcpi_rd := 0.U
-  core.io.irq := 0.U
-
-  io.mem.req.bits.addr := core.io.wbm_adr_o
-  io.mem.req.bits.data := core.io.wbm_dat_o
-  io.mem.req.bits.mask := core.io.wbm_sel_o
-  io.mem.req.bits.write := core.io.wbm_we_o
-  core.io.wbm_dat_i := io.mem.resp.bits.data
-
-  // defalts
-  io.mem.req.valid := 0.B
-  io.mem.resp.ready := 0.B
-
-  core.io.wbm_ack_i := 0.B
-
-  object State extends ChiselEnum {
-    val Idle, RemoteRequest, RemoteWait = Value
-  }
-
-
-  val state = RegInit(State.Idle)
-
-  switch(state) {
-    is(State.Idle) {
-      io.mem.req.valid := 0.B
-
-      when(core.io.wbm_cyc_o) {
-        state := State.RemoteRequest
-      }
-    }
-    is(State.RemoteRequest) {
-      io.mem.req.valid := core.io.wbm_cyc_o
-
-      when(io.mem.req.ready) {
-        when(core.io.wbm_we_o) {
-          core.io.wbm_ack_i := 1.B
-          state := State.Idle
-        } otherwise {
-          state := State.RemoteWait
-        }
-      }
-    }
-    is(State.RemoteWait) {
-      io.mem.req.valid := 0.B
-      io.mem.resp.ready := 1.B
-      when(io.mem.resp.valid) {
-        core.io.wbm_ack_i := 1.B
-        state := State.Idle
-      }
-    }
-  }
-
-  
-
+  override val desiredName: String = "picorv32_wb"
+  addPath("src/verilog/picorv32.v")
 }
-
-
-import soc.ReadyValidChannelsIO
-import s4noc.Entry
-
-
-
-
-
-
-
-
-

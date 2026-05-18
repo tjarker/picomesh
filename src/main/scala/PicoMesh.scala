@@ -13,69 +13,23 @@ import routing.simple.SimpleRouterPort
 import routing.Local
 import routing.Coord
 
-class PicoMesh(c: PicoRvConfig) extends Module {
-
-  val io = IO(new Bundle {
-    val pontePort = Flipped(new ponte.PonteAccessPort)
-  })
-  
-
-  val s4nocReq = Module(new CustomS4NoC(4, new MemoryRequest))
-  val s4nocResp = Module(new CustomS4NoC(4, new MemoryResponse))
-
-  val picoConf = c.copy(
-    progAddrReset = 0x2000_0000,
-    stackAddr = 0x30000100
-  )
-
-  val core0 = Module(new PicoNode(picoConf))
-  val core1 = Module(new PicoNode(picoConf))
-
-  core0.coreId := 0.U
-  core1.coreId := 1.U
-  val mem = Module(new OpenRamAndRomMemoryNode)
-  val accessNode = Module(new AccessNode)
-
-  io.pontePort <> accessNode.io.pontePort
-
-
-  for (i <- 0 until 2 * 2) {
-    s4nocReq.io.networkPort(i).tx.expand(
-      _.valid := 0.B,
-      _.bits.expand(
-        _.core := 0.U,
-        _.data := DontCare
-      )
-    )
-    s4nocReq.io.networkPort(i).rx.ready := 1.B
-
-    s4nocResp.io.networkPort(i).tx.expand(
-      _.valid := 0.B,
-      _.bits.expand(
-        _.core := 0.U,
-        _.data := DontCare
-      )
-    )
-    s4nocResp.io.networkPort(i).rx.ready := 1.B
-  }
-
-  // connect core to s4nocReq
-  s4nocReq.io.networkPort(0) <> core0.io.networkPortReq
-  s4nocResp.io.networkPort(0) <> core0.io.networkPortResp
-
-  s4nocReq.io.networkPort(1) <> core1.io.networkPortReq
-  s4nocResp.io.networkPort(1) <> core1.io.networkPortResp
-
-  s4nocReq.io.networkPort(2) <> mem.io.networkPortReq
-  s4nocResp.io.networkPort(2) <> mem.io.networkPortResp
-
-
-  s4nocReq.io.networkPort(3) <> accessNode.io.networkPortReq
-  s4nocResp.io.networkPort(3) <> accessNode.io.networkPortResp
-
-}
-
-
+/**
+  * A 3x3 S4NoC with 6 picorv cores, 2 memory nodes (1kb each) and an access node for the ponte UART-bridge
+  * 
+  * The layout is as follows:
+  * [6] core3      - [7] core4    - [8] core5
+  *   |              |              |
+  * [3] core0      - [4] core1    - [5] core2
+  *   |              |              |
+  * [0] accessNode - [1] memLow   - [2] memHigh
+  * 
+  * Cores boot from a bootloader rom in the access node, which looks up a core-local boot address and jumps there.
+  * 
+  * By default the boot address of all cores points to another program rom in the acces node, containing a simple program,
+  * that accumulates the sum of core-ids via the scratchpads of the cores and writes the result to memory.
+  *
+  * @param c config
+  */
 class PicoMeshBig(c: PicoRvConfig) extends Module {
 
   val io = IO(new Bundle {
@@ -83,43 +37,23 @@ class PicoMeshBig(c: PicoRvConfig) extends Module {
   })
   
 
-  val s4nocReq = Module(new CustomS4NoC(16, new MemoryRequest))
-  val s4nocResp = Module(new CustomS4NoC(16, new MemoryResponse))
+  val s4nocReq = Module(new CustomS4NoC(9, new MemoryRequest, Seq.range(0, 9)))
+  val s4nocResp = Module(new CustomS4NoC(9, new MemoryResponse, Seq.range(0, 9)))
 
   val picoConf = c.copy(
     progAddrReset = 0x0000_0000,
-    stackAddr = 0x60000400
+    stackAddr = 0x20000400
   )
-
-  for (i <- Seq(1,2,3,12,13,14,15)) {
-    s4nocReq.io.networkPort(i).tx.expand(
-      _.valid := 0.B,
-      _.bits.expand(
-        _.core := DontCare,
-        _.data := DontCare
-      )
-    )
-    s4nocReq.io.networkPort(i).rx.ready := 1.B
-
-    s4nocResp.io.networkPort(i).tx.expand(
-      _.valid := s4nocReq.io.networkPort(i).rx.valid && !s4nocReq.io.networkPort(i).rx.bits.data.write,
-      _.bits.expand(
-        _.core := s4nocReq.io.networkPort(i).rx.bits.core,
-        _.data.data := 0.U
-      )
-    )
-    s4nocResp.io.networkPort(i).rx.ready := 1.B
-  }
 
   val cores = Seq.fill(6)(Module(new PicoNode(picoConf)))
 
   val coreToCoreidMap = Map(
-    0 -> 4.U,
-    1 -> 7.U,
-    2 -> 8.U,
-    3 -> 9.U,
-    4 -> 10.U,
-    5 -> 11.U
+    0 -> 3.U,
+    1 -> 4.U,
+    2 -> 5.U,
+    3 -> 6.U,
+    4 -> 7.U,
+    5 -> 8.U
   )
 
   for ((i, coreId) <- coreToCoreidMap) {
@@ -142,18 +76,14 @@ class PicoMeshBig(c: PicoRvConfig) extends Module {
   // s4nocReq.io.networkPort(12) <> romNode.io.networkPortReq
   // s4nocResp.io.networkPort(12) <> romNode.io.networkPortResp
 
-  s4nocReq.io.networkPort(5) <> memLow.io.networkPortReq
-  s4nocResp.io.networkPort(5) <> memLow.io.networkPortResp
+  s4nocReq.io.networkPort(1) <> memLow.io.networkPortReq
+  s4nocResp.io.networkPort(1) <> memLow.io.networkPortResp
 
-  s4nocReq.io.networkPort(6) <> memHigh.io.networkPortReq
-  s4nocResp.io.networkPort(6) <> memHigh.io.networkPortResp
+  s4nocReq.io.networkPort(2) <> memHigh.io.networkPortReq
+  s4nocResp.io.networkPort(2) <> memHigh.io.networkPortResp
 
 }
 
-
-object PicoMesh extends App {
-  emitVerilog(new PicoMesh(PicoRvConfig.small), Array("--target-dir", "generated"))
-}
 
 
 class PortAdapter[T <: Data](c: Coord)(implicit p: SimpleNocParams[T]) extends Module {

@@ -37,15 +37,15 @@ class LiftoffBench extends AnyFlatSpec with Matchers {
 
       var steps = 0
 
-      while(read(dut, 0x41000014) == 0 && steps < 1000000) {
+      while(read(dut, 0x31000014) == 0 && steps < 1000000) {
         dut.clock.step(500)
         steps += 500
       }
 
       for (i <- 0 until 6) {
-        read(dut, 0x5FFFFC00 + i * 4) shouldBe (0x03330000L + i)
+        read(dut, 0x1FFFFC00 + i * 4) shouldBe (0x03330000L + i)
       }
-      read(dut, 0x5FFFFC00 + 6 * 4) shouldBe 0x10
+      read(dut, 0x1FFFFC00 + 6 * 4) shouldBe 0x10
     }
   }
 }

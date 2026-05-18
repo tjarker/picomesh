@@ -11,6 +11,13 @@ class PassthroughDummyFifo[T <: Data](gen: T, depth: Int) extends Fifo(gen: T, d
   io.deq.bits := io.enq.bits
 }
 
+/**
+  * A S4NoC network interface with no split buffers, a single tx buffer, but 6 receive buffers, to reduce resources.
+  *
+  * @param id
+  * @param conf
+  * @param dt
+  */
 class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Module {
   val io = IO(new Bundle {
     val networkPort = Flipped(new ReadyValidChannelsIO(Entry(dt)))

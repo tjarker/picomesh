@@ -29,8 +29,7 @@ class AccessNode extends Module {
       _.data.expand(
         _.addr := io.pontePort.addr,
         _.data := io.pontePort.wdata,
-        _.write := io.pontePort.write,
-        _.mask := "b1111".U
+        _.write := io.pontePort.write
       )
     )
   )

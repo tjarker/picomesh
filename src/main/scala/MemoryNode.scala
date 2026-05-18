@@ -63,7 +63,7 @@ class OpenRamMemoryNode extends Module with NocNode {
   mem.io.clk0 := clock
   mem.io.csb0 := 0.B
   mem.io.web0 := !(io.networkPortReq.rx.bits.data.write && io.networkPortReq.rx.valid)
-  mem.io.wmask0 := io.networkPortReq.rx.bits.data.mask
+  mem.io.wmask0 := "b1111".U
   mem.io.addr0 := io.networkPortReq.rx.bits.data.addr(9, 2)
   mem.io.din0 := io.networkPortReq.rx.bits.data.data
   val readData = mem.io.dout0
@@ -117,7 +117,7 @@ class OpenRamAndRomMemoryNode extends Module with NocNode {
   mem.io.clk0 := clock
   mem.io.csb0 := 0.B
   mem.io.web0 := !io.networkPortReq.rx.bits.data.write && io.networkPortReq.rx.valid && ramAccess
-  mem.io.wmask0 := io.networkPortReq.rx.bits.data.mask
+  mem.io.wmask0 := "b1111".U
   mem.io.addr0 := io.networkPortReq.rx.bits.data.addr(9, 2)
   mem.io.din0 := io.networkPortReq.rx.bits.data.data
   val readData = mem.io.dout0

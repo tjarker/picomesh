@@ -1,14 +1,15 @@
 
-all: comp verilog harden-pico-node pico-mesh-synth pico-mesh-layout
+all: comp verilog pico-mesh-reset pico-mesh-synth pico-mesh-layout
 
 verilog:
 	sbt "runMain PicoMeshBigTop"
 
 NIX_RUN=nix run github:chipfoundry/openlane-2/CI2511 -- 
+LIBRELANE_HARDEN=$(NIX_RUN) --run-tag harden --manual-pdk --pdk-root ${PWD}/../dependencies/pdks/
 
 harden-pico-node:
 	@rm -rf layout/PicoNode/runs
-	$(NIX_RUN) --save-views-to build/layout/PicoNode --run-tag harden layout/PicoNode/config.yaml
+	$(LIBRELANE_HARDEN) --save-views-to build/layout/PicoNode layout/PicoNode/config.yaml
 
 openroad-pico-node:
 	${NIX_RUN}--last-run --flow OpenInOpenROAD layout/PicoNode/config.yaml
@@ -20,10 +21,10 @@ pico-mesh-reset:
 	@rm -rf layout/PicoMeshBigTop/runs
 
 pico-mesh-synth:
-	${NIX_RUN} --run-tag harden --to "Checker.NetlistAssignStatements" layout/PicoMeshBigTop/config.yaml
+	${LIBRELANE_HARDEN} --to "Checker.NetlistAssignStatements" layout/PicoMeshBigTop/config.yaml
 
 pico-mesh-layout:
-	${NIX_RUN} --run-tag harden --from "OpenROAD.CheckSDCFiles" --save-views-to build/layout/PicoMeshBigTop layout/PicoMeshBigTop/config.yaml
+	${LIBRELANE_HARDEN} --from "OpenROAD.CheckSDCFiles" --save-views-to build/layout/PicoMeshBigTop layout/PicoMeshBigTop/config.yaml
 
 openroad-pico-mesh:
 	${NIX_RUN}--last-run --flow OpenInOpenROAD layout/PicoMeshBigTop/config.yaml
@@ -32,6 +33,27 @@ klayout-pico-mesh:
 	${NIX_RUN}--last-run --flow OpenInKLayout layout/PicoMeshBigTop/config.yaml
 
 comp: comp-bootloader comp-rom comp-app
+
+#blocks are dirs in layout dir
+blocks = $(shell cd layout && find * -maxdepth 0 -type d)
+
+ecch:
+	@echo $(blocks)
+
+$(blocks):
+	@echo "Compiling block $@"
+	rm -rf layout/$@/runs
+	${NIX_RUN} --run-tag harden --save-views-to build/layout/$@ layout/$@/config.yaml
+
+openroad-targets=$(blocks:%=openroad-%)
+
+klayout-blocks=$(blocks:%=klayout-%)
+
+$(openroad_targets):
+	${NIX_RUN}--last-run --flow OpenInOpenROAD layout/$*/config.yaml
+
+$(klayout-blocks):
+	${NIX_RUN}--last-run --flow OpenInKLayout layout/$*/config.yaml
 
 comp-rom:
 	@mkdir -p build/rom

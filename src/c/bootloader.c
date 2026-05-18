@@ -14,13 +14,10 @@ void _start(void) {
   uint32_t *bootAddrReg = (uint32_t*)(coreBaseAddr | 0x01000010);
   uint32_t bootAddr = *bootAddrReg;
 
-  uint32_t coreId;
-  if (coreTag == 0x4) coreId = 0;
-  else if (coreTag == 0x7) coreId = 1;
-  else coreId = coreTag - 6;
+  uint32_t coreId = coreTag - 3;
 
   // setup stack pointer
-  uint32_t *stackPtr = (uint32_t*)(0x60000400 - coreId * 0x80);
+  uint32_t *stackPtr = (uint32_t*)(0x20000400 - coreId * 0x80);
   asm volatile (
     "mv sp, %0"
     :

@@ -3,23 +3,15 @@
 volatile uint32_t* const CORE_TAG = (volatile uint32_t*)0xFFFF0000;
 
 
-volatile uint32_t* const MEM = (volatile uint32_t*)(0x5FFFFC00);
+volatile uint32_t* const MEM = (volatile uint32_t*)(0x1FFFFC00);
 
 
 uint32_t core_id_to_addr(uint32_t coreId) {
-  if (coreId == 0) return 0x40000000;
-  else if (coreId == 1) return 0x70000000;
-  else {
-    return (coreId + 6) << 28;
-  }
+  return (coreId + 3) << 28;
 }
 
 uint32_t core_tag_to_id(uint32_t coreTag) {
-    if (coreTag == 0x4) return 0;
-    else if (coreTag == 0x7) return 1;
-    else {
-        return coreTag - 6;
-    }
+    return coreTag - 3;
 }
 
 inline uint32_t core_id() {

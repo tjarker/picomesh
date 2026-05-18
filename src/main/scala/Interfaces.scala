@@ -3,9 +3,8 @@ import chisel3.util._
 
 
 class MemoryRequest extends Bundle {
-  val addr = UInt(32.W)
+  val addr = UInt(28.W)
   val data = UInt(32.W)
-  val mask = UInt(4.W)
   val write = Bool()
 }
 

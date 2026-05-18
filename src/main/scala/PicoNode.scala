@@ -9,6 +9,11 @@ import s4noc.ChannelIO
 import s4noc.NetworkInterface
 
 
+/**
+  * A NoC node with a picorv core handling the request response logic for wishbone accesses from the core and external requests from the NoC.
+  *
+  * @param c config
+  */
 class PicoNode(c: PicoRvConfig) extends Module with NocNode {
 
   
@@ -31,7 +36,7 @@ class PicoNode(c: PicoRvConfig) extends Module with NocNode {
     _.adr := io.networkPortReq.rx.bits.data.addr,
     _.wdata := io.networkPortReq.rx.bits.data.data,
     _.we := io.networkPortReq.rx.bits.data.write,
-    _.sel := io.networkPortReq.rx.bits.data.mask
+    _.sel := "b1111".U
   )
   io.networkPortReq.rx.ready := io.networkPortResp.tx.ready && pico.io.remoteWb.ack
   io.networkPortResp.tx.expand(
@@ -49,8 +54,7 @@ class PicoNode(c: PicoRvConfig) extends Module with NocNode {
       _.data.expand(
         _.addr := pico.io.wb.adr,
         _.data := pico.io.wb.wdata,
-        _.write := pico.io.wb.we,
-        _.mask := pico.io.wb.sel
+        _.write := pico.io.wb.we
       )
     )
   )
