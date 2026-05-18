@@ -3,7 +3,7 @@ import chisel3.util._
 import ponte.Ponte
 
 
-class PicoMeshBigTop extends Module {
+class PicoMeshBigTop(bootBinPath: String, romBinPath: String) extends Module {
   val io= IO(new Bundle {
     val ponteTx = Output(Bool())
     val ponteRx = Input(Bool())
@@ -11,7 +11,7 @@ class PicoMeshBigTop extends Module {
 
   val ponte = Module(new Ponte(10_000_000, 9600))
 
-  val mesh = Module(new PicoMeshBig(PicoRvConfig()))
+  val mesh = Module(new PicoMeshBig(PicoRvConfig(), bootBinPath, romBinPath))
 
   ponte.io.uart.rx := io.ponteRx
   io.ponteTx := ponte.io.uart.tx
@@ -20,5 +20,5 @@ class PicoMeshBigTop extends Module {
 }
 
 object PicoMeshBigTop extends App {
-  emitVerilog(new PicoMeshBigTop, Array("--target-dir", "generated"))
+  emitVerilog(new PicoMeshBigTop("build/bootloader/bootloader.bin", "build/rom/rom.bin"), Array("--target-dir", "generated"))
 }

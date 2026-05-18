@@ -7,7 +7,7 @@ import Util._
 import soc.ReadyValidChannelsIO
 import s4noc.Entry
 
-class AccessNode extends Module {
+class AccessNode(bootBinPath: String, romBinPath: String) extends Module {
 
   val io = IO(new Bundle {
     val networkPortReq = new ReadyValidChannelsIO(Entry(new MemoryRequest))
@@ -34,9 +34,9 @@ class AccessNode extends Module {
     )
   )
 
-  val bootRom = VecInit(Util.Binary.load("build/bootloader/bootloader.bin").map(_.U(32.W)))
+  val bootRom = VecInit(Util.Binary.load(bootBinPath).map(_.U(32.W)))
 
-  val progRom = VecInit(Util.Binary.load("build/rom/rom.bin").map(_.U(32.W)))
+  val progRom = VecInit(Util.Binary.load(romBinPath).map(_.U(32.W)))
 
   val readData = Mux(
     io.networkPortReq.rx.bits.data.addr(27),
