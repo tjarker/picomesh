@@ -42,8 +42,10 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
   // from slot count to sending core
   val translationTableRcv = VecInit(Seq.fill(len)(0.U(8.W)))
   val validSlot = VecInit(Seq.fill(len)(false.B))
+  println(s"Core $id:")
   for (i <- 0 until len) {
     val dest = sched.timeToDest(id, i).dest
+
     if (dest != -1) {
       translationTableSend(i) := dest.U
       validSlot(i) := true.B
@@ -52,7 +54,40 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
     if (src != -1) {
       translationTableRcv(i) := src.U
     }
+    println(s"  Slot $i: dest=$dest, src=$src")
   }
+
+  var acc = 0
+  // calculate response times
+  for (i <- 0 until conf.n) {
+    // find arrival time for i
+    var arrivalTime = -1
+    for (j <- 0 until len) {
+      val src = sched.timeToSource(id, j)
+      if (src == i) {
+        arrivalTime = j
+      }
+    }
+    // find next transmission slot back to i
+    var responseTime = -1
+    for (j <- 0 until len) {
+      val dest = sched.timeToDest(id, j).dest
+      if (dest == i) {
+        responseTime = j
+      }
+    }
+    if (arrivalTime != -1 && responseTime != -1) {
+      var diff = (responseTime - arrivalTime + len) % len
+      if (diff == 0)  diff = len
+      println(s"  Response time for $i: $diff")
+      acc = acc + diff
+    } else {
+      println(s"  Response time for $i: N/A")
+    }
+  }
+
+  val avgResponseTime = acc / (conf.n - 1)
+  println(s"  Average response time: $avgResponseTime")
 
   val regCnt = RegInit(0.U(log2Up(len).W))
   regCnt := Mux(regCnt === (len - 1).U, 0.U, regCnt + 1.U)
@@ -63,7 +98,7 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
   // TX
   // in/out direction is from the network view
   // flipped here
-  val txFifo = bubbleFifo(dt, 1)
+  val txFifo = dummyFifo(dt, 1)
   io.networkPort.tx <> txFifo.io.enq
 
   // val toCore = translationTable(txFifo.io.deq.bits.core)
@@ -71,7 +106,7 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
 
   // TODO: Minimum should be a single register. Could be enough in most cases.
   // TODO: we are wasting resources when also having the core # in this FIFO
-  val splitBuffers = (0 until conf.n).map(_ => dummyFifo(dt, 1))
+  val splitBuffers = (0 until conf.n).map(_ => bubbleFifo(dt, 1))
   for (i <- 0 until conf.n) {
     splitBuffers(i).io.enq.bits.data := txFifo.io.deq.bits.data
     splitBuffers(i).io.enq.bits.core := i.U
@@ -109,7 +144,7 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
   io.local.in.valid := valid
 
   // RX
-  val rxFifo = doubleBubbleFifo(dt, 6)
+  val rxFifo = doubleBubbleFifo(dt, 1)
   // rxFifo.io.enq.ready is ignored. When the FIFO is full, packets are simply dropped.
   rxFifo.io.enq.valid := io.local.out.valid
   rxFifo.io.enq.bits.data := io.local.out.data

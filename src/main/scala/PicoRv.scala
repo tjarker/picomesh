@@ -224,5 +224,5 @@ class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
   })
 
   override val desiredName: String = "picorv32_wb"
-  addPath("picomesh/src/verilog/picorv32.v")
+  addPath("src/verilog/picorv32.v")
 }
