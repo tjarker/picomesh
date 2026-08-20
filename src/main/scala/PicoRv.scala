@@ -37,13 +37,17 @@ object PicoRvConfig {
   def default: PicoRvConfig = PicoRvConfig()
 
   def small: PicoRvConfig = default.copy(
-    enableCounters = false,
+    enableCounters = true,
     enableCounters64 = false,
     enableRegs16_31 = false,
     enableRegsDualPort = false,
-    twoCycleCompare = true,
-    twoCycleAlu = true,
+    twoStageShift = false,
+    twoCycleCompare = false,
+    twoCycleAlu = false,
     enableIrqQregs = false,
+    catchMisaligned = false,
+    catchIllegalInstruction = false,
+    enableIrqTimer = false,
   )
 }
 

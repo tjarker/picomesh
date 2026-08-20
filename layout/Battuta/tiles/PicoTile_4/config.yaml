@@ -1,7 +1,7 @@
-DESIGN_NAME: PicoTile
+DESIGN_NAME: PicoTile_4
 VERILOG_FILES:
-  - dir::../../generated/PicoTile.v
-  - dir::../../src/verilog/picorv32.v
+  - dir::../../../../generated/Battuta.v
+  - dir::../../../../src/verilog/picorv32.v
 
 VDD_NETS: ["vccd1"]
 GND_NETS: ["vssd1"]
@@ -13,6 +13,7 @@ TIMING_VIOLATION_CORNERS: []
 
 PNR_SDC_FILE: dir::constr.sdc
 SIGNOFF_SDC_FILE: dir::constr.sdc
+FALLBACK_SDC: dir::../../base.sdc
 
 STA_CORNERS:
  - nom_tt_025C_1v80

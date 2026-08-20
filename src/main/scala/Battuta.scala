@@ -14,9 +14,13 @@ class Battuta(bootBinPath: String, romBinPath: String) extends Module {
     val ponteRx = Input(Bool())
   })
 
+  val syncReset = RegNext(RegNext(reset))
+
   val ponte = Module(new Ponte(10_000_000, 9600))
+  ponte.reset := syncReset
 
   val array = Module(new BattutaArray(PicoRvConfig.small, bootBinPath, romBinPath))
+  array.reset := syncReset
 
   ponte.io.uart.rx := io.ponteRx
   io.ponteTx := ponte.io.uart.tx
@@ -32,7 +36,7 @@ class BattutaArray(c: PicoRvConfig, bootBinPath: String, romBinPath: String) ext
 
   val picoConf = c.copy(
     progAddrReset = 0x0000_0000,
-    stackAddr = 0x2000_0400
+    //stackAddr = 0x2000_0400
   )
 
   val s4nocConf = s4noc.Config(
@@ -48,10 +52,17 @@ class BattutaArray(c: PicoRvConfig, bootBinPath: String, romBinPath: String) ext
     Module(new PicoTile(i + 3, s4nocConf, s4nocSchedule, picoConf))
   }
 
+  coreTiles.foreach { c =>
+    c.reset := RegNext(reset)
+  }
+
   val accessTile = Module(new AccessTile(0, s4nocConf, s4nocSchedule, bootBinPath, romBinPath))
+  accessTile.reset := RegNext(reset)
   accessTile.pontePort <> io.pontePort
   val memLowTile = Module(new MemoryTile(1, s4nocConf, s4nocSchedule))
+  memLowTile.reset := RegNext(reset)
   val memHighTile = Module(new MemoryTile(2, s4nocConf, s4nocSchedule))
+  memHighTile.reset := RegNext(reset)
 
   val tiles = Seq(accessTile, memLowTile, memHighTile) ++ coreTiles
 

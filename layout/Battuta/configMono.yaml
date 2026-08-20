@@ -1,18 +1,15 @@
-DESIGN_NAME: PicoTile
+DESIGN_NAME: Battuta
 VERILOG_FILES:
-  - dir::../../generated/PicoTile.v
+  - dir::../../generated/Battuta.v
   - dir::../../src/verilog/picorv32.v
 
 VDD_NETS: ["vccd1"]
 GND_NETS: ["vssd1"]
 
 CLOCK_PORT: clock
-CLOCK_PERIOD: 8
+CLOCK_PERIOD: 10
 
 TIMING_VIOLATION_CORNERS: []
-
-PNR_SDC_FILE: dir::constr.sdc
-SIGNOFF_SDC_FILE: dir::constr.sdc
 
 STA_CORNERS:
  - nom_tt_025C_1v80
@@ -22,7 +19,7 @@ STA_CORNERS:
 FP_PDN_MULTILAYER: true
 FP_PDN_CORE_RING: true
 #RT_MAX_LAYER: met4
-GRT_ALLOW_CONGESTION: true
+#GRT_ALLOW_CONGESTION: true
 
 # DESIGN_REPAIR_MAX_SLEW_PCT: 12
 # DESIGN_REPAIR_MAX_CAP_PCT: 12
@@ -33,12 +30,18 @@ GRT_ALLOW_CONGESTION: true
 
 #GRT_ALLOW_CONGESTION: true
 
-PL_TARGET_DENSITY_PCT: 75
-FP_CORE_UTIL: 60
+GRT_ANTENNA_REPAIR_DIODE_ONLY: true
+PRIMARY_GDSII_STREAMOUT_TOOL: "klayout"
+MAGIC_CAPTURE_ERRORS: false
+
+FALLBACK_SDC: dir::base.sdc
+
+PL_TARGET_DENSITY_PCT: 40
+FP_CORE_UTIL: 40
 #FP_ASPECT_RATIO: 1.5
 FP_PIN_ORDER_CFG: dir::pin_order.cfg
 FP_SIZING: absolute
-DIE_AREA: [0, 0, 520, 520]
+DIE_AREA: [0, 0, 2000, 2000]
 SYNTH_AUTONAME: true
 #FP_DEF_TEMPLATE: template.def
 # FP_OBSTRUCTIONS:
@@ -61,3 +64,21 @@ SYNTH_AUTONAME: true
 # DESIGN_REPAIR_MAX_WIRE_LENGTH: 300
 # GRT_ANTENNA_MARGIN: 25
 # GRT_ANTENNA_ITERS: 40
+
+ERROR_ON_LVS_ERROR: false
+
+MACROS:
+  sky130_sram_1kbyte_1rw1r_32x256_8:
+    instances:
+      array.memLowTile.mem:
+        location: [100, 100]
+        orientation: FS
+      array.memHighTile.mem:
+        location: [700, 100]
+        orientation: S
+    gds: dir::../../../gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
+    lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
+    nl: pdk_dir::libs.ref/sky130_sram_macros/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v
+PDN_MACRO_CONNECTIONS:
+  - "array.memLowTile.mem vccd1 vssd1 vccd1 vssd1"
+  - "array.memHighTile.mem vccd1 vssd1 vccd1 vssd1"

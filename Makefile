@@ -4,8 +4,12 @@ all: comp verilog pico-mesh-reset pico-mesh-synth pico-mesh-layout
 verilog:
 	sbt "runMain PicoMeshBigTop"
 
-NIX_RUN=nix run github:chipfoundry/openlane-2/CI2511 -- 
-LIBRELANE_HARDEN=$(NIX_RUN) --run-tag harden --manual-pdk --pdk-root ${PWD}/../dependencies/pdks/
+#NIX_RUN=nix run github:chipfoundry/openlane-2/CI2511 -- 
+#LIBRELANE_HARDEN=$(NIX_RUN) --run-tag harden --manual-pdk --pdk-root ${PWD}/../dependencies/pdks/
+
+NIX_RUN=nix run github:librelane/librelane --
+LIBRELANE_HARDEN=$(NIX_RUN) --run-tag harden
+
 
 harden-pico-node:
 	@rm -rf layout/PicoNode/runs
@@ -31,6 +35,39 @@ openroad-pico-mesh:
 
 klayout-pico-mesh:
 	${NIX_RUN}--last-run --flow OpenInKLayout layout/PicoMeshBigTop/config.yaml
+
+
+
+
+battuta_core_0:
+	@rm -rf layout/Battuta/tiles/PicoTile/runs
+  ${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile layout/Battuta/tiles/PicoTile/config.yaml
+
+battuta_core_1:
+	@rm -rf layout/Battuta/tiles/PicoTile_1/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile_1 layout/Battuta/tiles/PicoTile_1/config.yaml
+
+battuta_core_2:
+	@rm -rf layout/Battuta/tiles/PicoTile_2/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile_2 layout/Battuta/tiles/PicoTile_2/config.yaml
+
+battuta_core_3:
+	@rm -rf layout/Battuta/tiles/PicoTile_3/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile_3 layout/Battuta/tiles/PicoTile_3/config.yaml
+
+battuta_core_4:
+	@rm -rf layout/Battuta/tiles/PicoTile_4/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile_4 layout/Battuta/tiles/PicoTile_4/config.yaml
+
+battuta_core_5:
+	@rm -rf layout/Battuta/tiles/PicoTile_5/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile_5 layout/Battuta/tiles/PicoTile_5/config.yaml
+
+battuta_mem_0:
+	@rm -rf layout/Battuta/tiles/MemoryTile/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/MemoryTile layout/Battuta/tiles/MemoryTile/config.yaml
+
+
 
 comp: comp-bootloader comp-rom comp-app
 

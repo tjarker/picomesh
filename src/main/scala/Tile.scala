@@ -28,8 +28,8 @@ class Tile[A <: Data, B <: Data](id: Int, conf: Config, schedule: Array[Array[In
   val reqNi = Module(new CustomNetworkInterface(id, conf, new MemoryRequest))
   val respNi = Module(new CustomNetworkInterface(id, conf, new MemoryResponse))
 
-  reqRouter.io.ports(Const.LOCAL) <> reqNi.io.local
-  respRouter.io.ports(Const.LOCAL) <> respNi.io.local
+  reqNi.io.local <> reqRouter.io.ports(Const.LOCAL)
+  respNi.io.local <> respRouter.io.ports(Const.LOCAL)
 
   val reqPort = reqNi.io.networkPort
   val respPort = respNi.io.networkPort
