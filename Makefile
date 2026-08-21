@@ -7,7 +7,7 @@ verilog:
 #NIX_RUN=nix run github:chipfoundry/openlane-2/CI2511 -- 
 #LIBRELANE_HARDEN=$(NIX_RUN) --run-tag harden --manual-pdk --pdk-root ${PWD}/../dependencies/pdks/
 
-NIX_RUN=nix run github:librelane/librelane --
+NIX_RUN=nix run github:librelane/librelane/3.0.10 --
 LIBRELANE_HARDEN=$(NIX_RUN) --run-tag harden
 
 
@@ -40,8 +40,8 @@ klayout-pico-mesh:
 
 
 battuta_core_0:
-	@rm -rf layout/Battuta/tiles/PicoTile/runs
-  ${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile layout/Battuta/tiles/PicoTile/config.yaml
+	rm -rf layout/Battuta/tiles/PicoTile/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta/tiles/PicoTile layout/Battuta/tiles/PicoTile/config.yaml
 
 battuta_core_1:
 	@rm -rf layout/Battuta/tiles/PicoTile_1/runs
@@ -124,3 +124,14 @@ comp-app:
 		-o build/app/app.elf src/c/app.c
 	riscv64-unknown-elf-objcopy -O binary build/app/app.elf build/app/app.bin
 	riscv64-unknown-elf-objdump -d build/app/app.elf
+
+comp-barrier_demo:
+	@mkdir -p build/barrier_demo
+	riscv64-unknown-elf-g++ \
+		-march=rv32e -mabi=ilp32e \
+		-nostdlib -nostartfiles -ffreestanding -Os \
+		-I src/c \
+		-T src/c/rom.ld \
+		-o build/barrier_demo/barrier_demo.elf src/c/barrier_demo.c
+	riscv64-unknown-elf-objcopy -O binary build/barrier_demo/barrier_demo.elf build/barrier_demo/barrier_demo.bin
+	riscv64-unknown-elf-objdump -d build/barrier_demo/barrier_demo.elf

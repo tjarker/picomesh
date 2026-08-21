@@ -20,9 +20,16 @@ object PicoTile extends App {
 
 class PicoTile(id: Int, conf: Config, schedule: Array[Array[Int]], picoConf: PicoRvConfig) extends Tile(id, conf, schedule) {
 
+  val barrierPort = IO(new Bundle {
+    val barrierArrived = Output(Bool())
+    val barrierRelease = Input(Bool())
+  })
+
   val pico = Module(new PicoRv(picoConf))
   
   pico.io.coreId := id.U
+  pico.io.barrierRelease := barrierPort.barrierRelease
+  barrierPort.barrierArrived := pico.io.barrierArrived
 
   pico.io.remoteWb.expand(
     _.cyc := reqPort.rx.valid && respPort.tx.ready, // we wait with issuing the request until the resp.tx is ready

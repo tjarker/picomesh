@@ -52,6 +52,20 @@ class BattutaArray(c: PicoRvConfig, bootBinPath: String, romBinPath: String) ext
     Module(new PicoTile(i + 3, s4nocConf, s4nocSchedule, picoConf))
   }
 
+
+  // barrier logic
+  val arrived = coreTiles.map(_.barrierPort.barrierArrived)
+  val released = RegInit(0.B)
+  when(released) {
+    released := 0.B
+  }.elsewhen(arrived.reduce(_ && _)) {
+    released := 1.B
+  }
+  coreTiles.foreach { c =>
+    c.barrierPort.barrierRelease := released
+  }
+
+
   coreTiles.foreach { c =>
     c.reset := RegNext(reset)
   }
