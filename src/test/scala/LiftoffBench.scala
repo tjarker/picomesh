@@ -31,7 +31,9 @@ class LiftoffBench extends AnyFlatSpec with Matchers {
       dut.clock.step(1)
       dut.clock.stepUntil(dut.io.pontePort.done, 1.B)
       dut.io.pontePort.valid.poke(0.B)
-      dut.io.pontePort.rdata.peek().litValue
+      val res = dut.io.pontePort.rdata.peek().litValue
+      dut.clock.step()
+      res
     }
     Reporting.addProviderFilter("SimController.Queue")
     Reporting.addProviderFilter("Task")
@@ -55,6 +57,20 @@ class LiftoffBench extends AnyFlatSpec with Matchers {
         read(dut, 0x1FFFFC00 + i * 4) shouldBe (0x03330000L + i)
       }
       read(dut, 0x1FFFFC00 + 6 * 4) shouldBe 0x10
+
+      def getInstrAndCycles(core: Int): (Int, Int) = {
+        val instr = read(dut, (core.toLong << 28) | 0x01000004).toInt
+        val cycles = read(dut, (core.toLong << 28) | 0x01000008).toInt
+        (instr, cycles)
+      }
+
+      for (i <- 0 until 6) {
+        val (instr, cycles) = getInstrAndCycles(i + 3)
+        println(s"Core ${i}: instr=$instr cycles=$cycles cpi=${cycles.toDouble / instr}")
+        instr should be > 0
+        cycles should be > 0
+      }
+
     }
   }
 
@@ -64,17 +80,30 @@ class LiftoffBench extends AnyFlatSpec with Matchers {
 
 class BattutaBarrier extends AnyFlatSpec with Matchers {
 
+  val pdk = "../../../../.ciel/sky130A/libs.ref/sky130_fd_sc_hd/verilog"
+
+  import liftoff.simulation.ModelSource
+
 
   "Battuta" should "work with barriers" in {
     val model = ChiselModel(
-      new Battuta("build/bootloader/bootloader.bin", "build/barrier_demo/barrier_demo.bin"), 
+      new BattutaArray(PicoRvConfig.small, "build/bootloader/bootloader.bin", "build/barrier_demo/barrier_demo.bin"), 
       "build/liftoff-bench-barrier/".toDir,
+      ModelSource.Rtl,
+      // ModelSource.Netlist(
+      //   Seq(
+      //     "layout/Battuta/runs/harden/52-openroad-fillinsertion/Battuta.nl.v".toFile,
+      //     "src/verilog/sram_model.v".toFile,
+      //     s"$pdk/primitives.v".toFile,
+      //     s"$pdk/sky130_fd_sc_hd.v".toFile
+      //   )
+      // ),
       Seq(),//"src/verilog/picorv32.v".toFile),
       Seq(
         Verilator.Arguments.CustomFlag("--Wno-TIMESCALEMOD"), 
         Verilator.Arguments.NoTiming,
         Verilator.Arguments.CustomFlag("--Wno-STMTDLY"),
-        Verilator.Arguments.CustomFlag("--trace-saif"),
+        //Verilator.Arguments.CustomFlag("--trace-saif"),
       ),
       Seq()
       )
@@ -89,7 +118,44 @@ class BattutaBarrier extends AnyFlatSpec with Matchers {
       dut.reset.poke(true.B)
       dut.clock.step(1)
       dut.reset.poke(false.B)
-      dut.clock.step(5000)  
+
+      def read(dut: BattutaArray, addr: BigInt): BigInt = {
+        dut.io.pontePort.valid.poke(1.B)
+        dut.io.pontePort.addr.poke(addr.U)
+        dut.io.pontePort.write.poke(0.B)
+        dut.clock.step(1)
+        dut.clock.stepUntil(dut.io.pontePort.done, 1.B)
+        dut.io.pontePort.valid.poke(0.B)
+        val res = dut.io.pontePort.rdata.peek().litValue
+        dut.clock.step()
+        res
+      }
+
+      def coreIsInReset(coreId: Int): Boolean = {
+        read(dut, (coreId.toLong << 28) | 0x01000014) == 1
+      }
+
+
+      for (i <- 0 until 6) {
+        while(!coreIsInReset(i + 3)) {
+          dut.clock.step(1)
+        }
+      }
+
+      def getInstrAndCycles(core: Int): (Int, Int) = {
+        val instr = read(dut, (core.toLong << 28) | 0x01000004).toInt
+        val cycles = read(dut, (core.toLong << 28) | 0x01000008).toInt
+        (instr, cycles)
+      }
+
+      for (i <- 0 until 6) {
+        val (instr, cycles) = getInstrAndCycles(i + 3)
+        println(s"Core ${i}: instr=$instr cycles=$cycles cpi=${cycles.toDouble / instr}")
+        instr should be > 0
+        cycles should be > 0
+      }
+
+
     }
   }
 }

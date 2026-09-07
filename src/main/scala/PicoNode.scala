@@ -14,7 +14,7 @@ import s4noc.NetworkInterface
   *
   * @param c config
   */
-class PicoNode(c: PicoRvConfig) extends Module with NocNode {
+class PicoNode(id: Int, c: PicoRvConfig) extends Module with NocNode {
 
   
 
@@ -26,9 +26,7 @@ class PicoNode(c: PicoRvConfig) extends Module with NocNode {
   val coreId = IO(Input(UInt(4.W)))
 
 
-  val pico = Module(new PicoRv(c))
-  
-  pico.io.coreId := coreId
+  val pico = Module(new PicoRv(id, c))
 
   pico.io.remoteWb.expand(
     _.cyc := io.networkPortReq.rx.valid && io.networkPortResp.tx.ready, // we wait with issuing the request until the resp.tx is ready

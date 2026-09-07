@@ -4,7 +4,9 @@ import chisel3.util._
 
 import Util._
 
-class AccessTile(id: Int, conf: s4noc.Config, schedule: Array[Array[Int]], bootBinPath: String, romBinPath: String) extends Tile(id, conf, schedule) {
+import s4noc._
+
+class AccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule, bootBinPath: String, romBinPath: String) extends Tile(id, conf, reqSched, respSched) {
 
   val pontePort = IO(Flipped(new ponte.PonteAccessPort))
 
@@ -15,62 +17,40 @@ class AccessTile(id: Int, conf: s4noc.Config, schedule: Array[Array[Int]], bootB
 
   val state = RegInit(State.Idle)
 
-  reqPort.tx.expand(
-    _.valid := 0.B, // default
-    _.bits.expand(
-      _.core := pontePort.addr(31, 28),
-      _.data.expand(
-        _.addr := pontePort.addr,
-        _.data := pontePort.wdata,
-        _.write := pontePort.write
-      )
-    )
+  val requesterNi = Module(new BlockingRequesterNi(id, reqSched, respSched))
+  val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8).filter(_ != id)))
+
+  requesterNi.io.reqIngress <> reqLocal.in
+  requesterNi.io.respEgress <> respLocal.out
+  responderNi.io.reqEgress <> reqLocal.out
+  responderNi.io.respIngress <> respLocal.in
+  responderNi.io.reqLookAhead <> reqRouter.localPortLookahead
+
+  requesterNi.io.reqSlot := reqSlotCounter
+  requesterNi.io.respSlot := respSlotCounter
+  responderNi.io.reqSlot := reqSlotCounter
+  responderNi.io.respSlot := respSlotCounter
+
+  requesterNi.io.wb.expand(
+    _.cyc := pontePort.valid,
+    _.stb := pontePort.valid,
+    _.adr := pontePort.addr,
+    _.wdata := pontePort.wdata,
+    _.we := pontePort.write,
+    _.sel := "b1111".U
   )
+  pontePort.rdata := requesterNi.io.wb.rdata
+  pontePort.done := requesterNi.io.wb.ack
 
   val bootRom = VecInit(Util.Binary.load(bootBinPath).map(_.U(32.W)))
 
   val progRom = VecInit(Util.Binary.load(romBinPath).map(_.U(32.W)))
 
   val readData = Mux(
-    reqPort.rx.bits.data.addr(27),
-    progRom(reqPort.rx.bits.data.addr(26, 2)),
-    bootRom(reqPort.rx.bits.data.addr(26, 2))
+    responderNi.io.comMemReq.addr(27),
+    progRom(responderNi.io.comMemReq.addr(26, 2)),
+    bootRom(responderNi.io.comMemReq.addr(26, 2))
   )
-
-  reqPort.rx.ready := respPort.tx.ready
-  respPort.tx.valid := reqPort.rx.valid && !reqPort.rx.bits.data.write
-  respPort.tx.bits.expand(
-    _.core := reqPort.rx.bits.core,
-    _.data.data := readData
-  )
-
-  respPort.rx.ready := 0.B // default
-
-  pontePort.done := 0.B // default
-  pontePort.rdata := respPort.rx.bits.data.data
-
-
-  switch(state) {
-    is(State.Idle) {
-      when(pontePort.valid) {
-        state := State.WaitReq
-      }
-    }
-    is(State.WaitReq) {
-      reqPort.tx.valid := 1.B
-
-      when(reqPort.tx.ready) {
-        state := Mux(pontePort.write, State.Idle, State.WaitResp)
-      }
-    }
-    is(State.WaitResp) {
-      respPort.rx.ready := 1.B
-      when(respPort.rx.valid) {
-        state := State.Idle
-        pontePort.done := 1.B
-      }
-    }
-  }
-
+  responderNi.io.rdData := readData
 
 }

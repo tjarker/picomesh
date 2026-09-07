@@ -76,10 +76,9 @@ import PicoRv._
   *
   * @param c config
   */
-class PicoRv(c: PicoRvConfig) extends Module {
+class PicoRv(id: Int, c: PicoRvConfig) extends Module {
 
   val io = IO(new Bundle {
-    val coreId = Input(UInt(4.W))
     val wb = new WishbonePort
     val remoteWb = Flipped(new WishbonePort)
     val barrierArrived = Output(Bool())
@@ -87,38 +86,6 @@ class PicoRv(c: PicoRvConfig) extends Module {
   })
 
   io.barrierArrived := 0.B // default
-
-
-  val core = Module(new PicoRvBlackBox(c))
-
-  val configReg = RegInit(0.U(1.W))
-
-  core.io.pcpi_wait := 0.B
-  core.io.pcpi_wr := 0.B
-  core.io.pcpi_ready := 0.B
-  core.io.pcpi_rd := 0.U
-  core.io.wb_clk_i := clock
-  core.io.wb_rst_i := reset.asBool || configReg(0) 
-  core.io.irq := 0.U
-
-
-  val isLocalAccess = core.io.wbm_adr_o(31, 28) === io.coreId || core.io.wbm_adr_o(31, 16) === 0xFFFFL.U
-
-  io.remoteWb.ack := io.remoteWb.cyc
-  
-
-  io.wb.cyc := !isLocalAccess && core.io.wbm_cyc_o
-  io.wb.stb := !isLocalAccess && core.io.wbm_cyc_o
-  io.wb.we := core.io.wbm_we_o
-  io.wb.adr := core.io.wbm_adr_o
-  io.wb.wdata := core.io.wbm_dat_o
-  io.wb.sel := core.io.wbm_sel_o
-
-  val localAccessAddr = Mux(io.remoteWb.cyc, io.remoteWb.adr, core.io.wbm_adr_o)
-  val localAccessData = Mux(io.remoteWb.cyc, io.remoteWb.wdata, core.io.wbm_dat_o)
-  val localAccessMask = Mux(io.remoteWb.cyc, io.remoteWb.sel, core.io.wbm_sel_o)
-  val localAccessWrite = Mux(io.remoteWb.cyc, io.remoteWb.we, core.io.wbm_we_o)
-
 
   /* 
       0xFFFF_0000: Core ID (read-only)
@@ -132,56 +99,99 @@ class PicoRv(c: PicoRvConfig) extends Module {
       0x?000_0014: Config (read/write)
    */
 
+  val core = Module(new PicoRvBlackBox(c))
+
+  val configReg = RegInit(0.U(1.W))
+
   val scratchPad = Mem(4, UInt(32.W))
 
   val bootAddr = RegInit(0x0800_0000.U(32.W))
 
   val barrierEn = RegInit(0.B)
 
+  core.io.pcpi_wait := 0.B
+  core.io.pcpi_wr := 0.B
+  core.io.pcpi_ready := 0.B
+  core.io.pcpi_rd := 0.U
+  core.io.wb_clk_i := clock
+  core.io.wb_rst_i := reset.asBool || configReg(0) 
+  core.io.irq := 0.U
 
 
-  val scratchPadAccess = localAccessAddr(27, 4) === 0x100_000.U
-  val coreIdAccess = localAccessAddr(31, 0) === 0xFFFF_0000L.U
-  val bootAddrAccess = localAccessAddr(27, 0) === 0x100_0010.U
-  val configAccess = localAccessAddr(27, 0) === 0x100_0014.U
-  val barrierAccess = localAccessAddr(31, 0) === 0xFFFF_0004L.U
-  val barrierEnAccess = localAccessAddr(31, 0) === 0xFFFF_0008L.U
+  val isLocalAccess = core.io.wbm_adr_o(31, 28) === id.U || core.io.wbm_adr_o(31, 16) === 0xFFFFL.U
+
+
+  // pico to remote wishbone interface
+  io.wb.cyc := !isLocalAccess && core.io.wbm_cyc_o
+  io.wb.stb := !isLocalAccess && core.io.wbm_cyc_o
+  io.wb.we := core.io.wbm_we_o
+  io.wb.adr := core.io.wbm_adr_o
+  io.wb.wdata := core.io.wbm_dat_o
+  io.wb.sel := core.io.wbm_sel_o
+
+
+  // access from remote core
+  val remoteScratchPadAccess = io.remoteWb.adr(27, 4) === 0x100_000.U
+  val remoteBootAddrAccess = io.remoteWb.adr(27, 0) === 0x100_0010.U
+  val remoteConfigAccess = io.remoteWb.adr(27, 0) === 0x100_0014.U
+
+  io.remoteWb.ack := io.remoteWb.cyc
+  io.remoteWb.rdata := MuxCase(0.U, Seq(
+    remoteScratchPadAccess -> scratchPad.read(io.remoteWb.adr(3, 2)),
+    remoteBootAddrAccess -> bootAddr,
+    remoteConfigAccess -> configReg
+  ))
+
+
+  // local access from pico core
+  val scratchPadAccess = core.io.wbm_adr_o(27, 4) === 0x100_000.U
+  val coreIdAccess = core.io.wbm_adr_o(31, 0) === 0xFFFF_0000L.U
+  val bootAddrAccess = core.io.wbm_adr_o(27, 0) === 0x100_0010.U
+  val configAccess = core.io.wbm_adr_o(27, 0) === 0x100_0014.U
+  val barrierAccess = core.io.wbm_adr_o(31, 0) === 0xFFFF_0004L.U
+  val barrierEnAccess = core.io.wbm_adr_o(31, 0) === 0xFFFF_0008L.U
 
 
   val readData = MuxCase(0.U, Seq(
-    scratchPadAccess -> scratchPad.read(localAccessAddr(3, 2)),
-    coreIdAccess -> io.coreId,
+    scratchPadAccess -> scratchPad.read(core.io.wbm_adr_o(3, 2)),
+    coreIdAccess -> id.U,
     bootAddrAccess -> bootAddr,
     configAccess -> configReg,
     barrierEnAccess -> barrierEn
   ))
-
-  io.remoteWb.rdata := readData
   core.io.wbm_dat_i := Mux(isLocalAccess, readData, io.wb.rdata)
   
 
+  // writes to local state
+  // remote write takes priority over local write
   val remoteWrite = io.remoteWb.cyc && io.remoteWb.we
   val picoLocalWrite = core.io.wbm_cyc_o && isLocalAccess && core.io.wbm_we_o
-  val writeAccess = remoteWrite || picoLocalWrite
-  when(writeAccess && scratchPadAccess) {
-    scratchPad.write(localAccessAddr(3, 2), localAccessData)
+
+  when(remoteWrite && remoteScratchPadAccess) {
+    scratchPad.write(io.remoteWb.adr(3, 2), io.remoteWb.wdata)
+  }.elsewhen(picoLocalWrite && scratchPadAccess) {
+    scratchPad.write(core.io.wbm_adr_o(3, 2), core.io.wbm_dat_o)
   }
 
-  when(writeAccess && bootAddrAccess) {
-    bootAddr := localAccessData
+  when(remoteWrite && remoteBootAddrAccess) {
+    bootAddr := io.remoteWb.wdata
+  }.elsewhen(picoLocalWrite && bootAddrAccess) {
+    bootAddr := core.io.wbm_dat_o
   }
 
-  when(writeAccess && configAccess) {
-    configReg := localAccessData
+  when(remoteWrite && remoteConfigAccess) {
+    configReg := io.remoteWb.wdata
+  }.elsewhen(picoLocalWrite && configAccess) {
+    configReg := core.io.wbm_dat_o
   }
 
-  when(writeAccess && barrierEnAccess) {
-    barrierEn := localAccessData(0)
+  when(picoLocalWrite && barrierEnAccess) {
+    barrierEn := core.io.wbm_dat_o(0)
   }
 
-  io.barrierArrived := Mux(barrierEn, writeAccess && barrierAccess, 0.B)
+  io.barrierArrived := Mux(barrierEn, picoLocalWrite && barrierAccess, 0.B)
 
-  core.io.wbm_ack_i := Mux(barrierEn && writeAccess && barrierAccess, io.barrierRelease, Mux(!isLocalAccess, io.wb.ack, core.io.wbm_cyc_o && !io.remoteWb.cyc))
+  core.io.wbm_ack_i := Mux(barrierEn && picoLocalWrite && barrierAccess, io.barrierRelease, Mux(isLocalAccess, core.io.wbm_cyc_o, io.wb.ack))
 
 }
 

@@ -37,19 +37,22 @@ class PicoMeshBig(c: PicoRvConfig, bootBinPath: String, romBinPath: String) exte
     stackAddr = 0x20000400
   )
 
-  val cores = Seq.fill(6)(Module(new PicoNode(picoConf)))
+  
 
   val coreToCoreidMap = Map(
-    0 -> 3.U,
-    1 -> 4.U,
-    2 -> 5.U,
-    3 -> 6.U,
-    4 -> 7.U,
-    5 -> 8.U
+    0 -> 3,
+    1 -> 4,
+    2 -> 5,
+    3 -> 6,
+    4 -> 7,
+    5 -> 8
   )
 
+  val coreIds = Seq.range(3, 9)
+
+  val cores = coreIds.map { case (coreId) => Module(new PicoNode(coreId, picoConf)) }
+
   for ((i, coreId) <- coreToCoreidMap) {
-    cores(i).coreId := coreId
     s4nocReq.io.networkPort(coreId) <> cores(i).io.networkPortReq
     s4nocResp.io.networkPort(coreId) <> cores(i).io.networkPortResp
   }

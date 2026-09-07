@@ -38,6 +38,9 @@ klayout-pico-mesh:
 
 
 
+battuta_monolothic:
+	@rm -rf layout/Battuta/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta layout/Battuta/configMono.yaml
 
 battuta_core_0:
 	rm -rf layout/Battuta/tiles/PicoTile/runs
@@ -69,13 +72,30 @@ battuta_mem_0:
 
 
 
-comp: comp-bootloader comp-rom comp-app
+comp: comp-bootloader comp-rom comp-app comp-barrier_demo
 
 #blocks are dirs in layout dir
 blocks = $(shell cd layout && find * -maxdepth 0 -type d)
 
 ecch:
 	@echo $(blocks)
+
+# Gate-level netlist for the RTL-vs-netlist equivalence test. Synthesised from
+# the current generated/ output so the two sides are always in sync -- the
+# netlists under layout/*/runs are snapshots of whatever the RTL was that day.
+SKY130_LIB=../dependencies/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+synth-s4router:
+	@mkdir -p build/synth
+	yosys -q -p "\
+		read_verilog generated/PicoMeshBigTop.v; \
+		hierarchy -top S4Router; \
+		synth -top S4Router -flatten; \
+		dfflibmap -liberty $(SKY130_LIB); \
+		abc -liberty $(SKY130_LIB); \
+		opt_clean -purge; \
+		write_verilog -noattr build/synth/S4Router_synth.v"
+	@echo "cells: $$(grep -c sky130_fd_sc_hd__ build/synth/S4Router_synth.v)"
 
 $(blocks):
 	@echo "Compiling block $@"
@@ -95,7 +115,7 @@ $(klayout-blocks):
 comp-rom:
 	@mkdir -p build/rom
 	riscv64-unknown-elf-g++ \
-		-march=rv32e -mabi=ilp32e \
+		-march=rv32ezicsr -mabi=ilp32e \
 		-nostdlib -nostartfiles -ffreestanding -Os \
 		-I src/c \
 		-T src/c/rom.ld \
@@ -107,7 +127,7 @@ comp-rom:
 comp-bootloader:
 	@mkdir -p build/bootloader
 	riscv64-unknown-elf-g++ \
-		-march=rv32e -mabi=ilp32e \
+		-march=rv32ezicsr -mabi=ilp32e \
 		-nostdlib -nostartfiles -ffreestanding -Os \
 		-T src/c/bootloader.ld \
 		-o build/bootloader/bootloader.elf src/c/bootloader.c
@@ -117,7 +137,7 @@ comp-bootloader:
 comp-app:
 	@mkdir -p build/app
 	riscv64-unknown-elf-g++ \
-		-march=rv32e -mabi=ilp32e \
+		-march=rv32ezicsr -mabi=ilp32e \
 		-nostdlib -nostartfiles -ffreestanding -Os \
 		-I src/c \
 		-T src/c/app.ld \
@@ -128,7 +148,7 @@ comp-app:
 comp-barrier_demo:
 	@mkdir -p build/barrier_demo
 	riscv64-unknown-elf-g++ \
-		-march=rv32e -mabi=ilp32e \
+		-march=rv32ezicsr -mabi=ilp32e \
 		-nostdlib -nostartfiles -ffreestanding -Os \
 		-I src/c \
 		-T src/c/rom.ld \

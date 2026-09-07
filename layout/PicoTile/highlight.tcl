@@ -1,8 +1,8 @@
 gui::clear_highlights -1
 select -type Inst -name "pico*"   -highlight 7
 select -type Inst -name "pico.core*"   -highlight 2
-select -type Inst -name "reqNi*" -highlight 5
-select -type Inst -name "respNi*" -highlight 6
+select -type Inst -name "requesterNi*" -highlight 5
+select -type Inst -name "responderNi*" -highlight 6
 select -type Inst -name "reqRouter*" -highlight 0
 select -type Inst -name "respRouter*" -highlight 3
 

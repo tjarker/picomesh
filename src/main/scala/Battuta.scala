@@ -46,10 +46,11 @@ class BattutaArray(c: PicoRvConfig, bootBinPath: String, romBinPath: String) ext
       DoubleBubbleType(1),
       0
   )
-  val s4nocSchedule = Schedule(3).schedule
+  val reqSchedule = Schedule(3)
+  val respSchedule = new InvertedSchedule(3)
 
   val coreTiles = Seq.tabulate(6) { i =>
-    Module(new PicoTile(i + 3, s4nocConf, s4nocSchedule, picoConf))
+    Module(new PicoTile(i + 3, s4nocConf, reqSchedule, respSchedule, picoConf))
   }
 
 
@@ -70,12 +71,12 @@ class BattutaArray(c: PicoRvConfig, bootBinPath: String, romBinPath: String) ext
     c.reset := RegNext(reset)
   }
 
-  val accessTile = Module(new AccessTile(0, s4nocConf, s4nocSchedule, bootBinPath, romBinPath))
+  val accessTile = Module(new AccessTile(0, s4nocConf, reqSchedule, respSchedule, bootBinPath, romBinPath))
   accessTile.reset := RegNext(reset)
   accessTile.pontePort <> io.pontePort
-  val memLowTile = Module(new MemoryTile(1, s4nocConf, s4nocSchedule))
+  val memLowTile = Module(new MemoryTile(1, s4nocConf, reqSchedule, respSchedule))
   memLowTile.reset := RegNext(reset)
-  val memHighTile = Module(new MemoryTile(2, s4nocConf, s4nocSchedule))
+  val memHighTile = Module(new MemoryTile(2, s4nocConf, reqSchedule, respSchedule))
   memHighTile.reset := RegNext(reset)
 
   val tiles = Seq(accessTile, memLowTile, memHighTile) ++ coreTiles

@@ -15,87 +15,47 @@ object PicoTile extends App {
       DoubleBubbleType(1),
       0
   )
-  emitVerilog(new PicoTile(0, conf, Schedule(3).schedule, PicoRvConfig.small), Array("--target-dir", "generated"))
+  emitVerilog(new PicoTile(0, conf, Schedule(3), new InvertedSchedule(3), PicoRvConfig.small), Array("--target-dir", "generated"))
 }
 
-class PicoTile(id: Int, conf: Config, schedule: Array[Array[Int]], picoConf: PicoRvConfig) extends Tile(id, conf, schedule) {
+class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig) extends Tile(id, conf, reqSched, respSched) {
 
   val barrierPort = IO(new Bundle {
     val barrierArrived = Output(Bool())
     val barrierRelease = Input(Bool())
   })
 
-  val pico = Module(new PicoRv(picoConf))
+  val pico = Module(new PicoRv(id, picoConf))
   
-  pico.io.coreId := id.U
   pico.io.barrierRelease := barrierPort.barrierRelease
   barrierPort.barrierArrived := pico.io.barrierArrived
 
+
+  val requesterNi = Module(new BlockingRequesterNi(id, reqSched, respSched))
+  val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8).filter(_ != id)))
+
+  reqRouter.io.ports(Const.LOCAL).in := requesterNi.io.reqIngress
+  requesterNi.io.respEgress := respRouter.io.ports(Const.LOCAL).out
+  responderNi.io.reqEgress := reqRouter.io.ports(Const.LOCAL).out
+  respRouter.io.ports(Const.LOCAL).in := responderNi.io.respIngress
+  responderNi.io.reqLookAhead <> reqRouter.localPortLookahead
+
+  requesterNi.io.reqSlot := reqSlotCounter
+  requesterNi.io.respSlot := respSlotCounter
+  responderNi.io.reqSlot := reqSlotCounter
+  responderNi.io.respSlot := respSlotCounter
+
+
   pico.io.remoteWb.expand(
-    _.cyc := reqPort.rx.valid && respPort.tx.ready, // we wait with issuing the request until the resp.tx is ready
-    _.stb := reqPort.rx.valid && respPort.tx.ready,
-    _.adr := reqPort.rx.bits.data.addr,
-    _.wdata := reqPort.rx.bits.data.data,
-    _.we := reqPort.rx.bits.data.write,
+    _.cyc := responderNi.io.comMemReq.valid,
+    _.stb := responderNi.io.comMemReq.wr,
+    _.adr := responderNi.io.comMemReq.addr,
+    _.wdata := responderNi.io.comMemReq.wrData,
+    _.we := responderNi.io.comMemReq.wr,
     _.sel := "b1111".U
   )
-  reqPort.rx.ready := respPort.tx.ready && pico.io.remoteWb.ack
-  respPort.tx.expand(
-    _.valid := pico.io.remoteWb.ack && !reqPort.rx.bits.data.write, // we wait with issuing the response until the resp.tx is ready, so single cycle ack is ok
-    _.bits.expand(
-      _.core := reqPort.rx.bits.core, // reply to the requesting core 
-      _.data.data := pico.io.remoteWb.rdata
-    )
-  )
+  responderNi.io.rdData := pico.io.remoteWb.rdata
 
-  reqPort.tx.expand(
-    _.valid := 0.B, // default
-    _.bits.expand(
-      _.core := pico.io.wb.adr(31, 28),
-      _.data.expand(
-        _.addr := pico.io.wb.adr,
-        _.data := pico.io.wb.wdata,
-        _.write := pico.io.wb.we
-      )
-    )
-  )
-
-  respPort.rx.ready := 0.B // default
-  pico.io.wb.ack := 0.B // default
-  pico.io.wb.rdata := respPort.rx.bits.data.data 
-
-  object State extends ChiselEnum {
-    val Idle, RemoteRequest, RemoteWait = Value
-  }
-
-
-  val state = RegInit(State.Idle)
-
-  switch(state) {
-    is(State.Idle) {
-      when(pico.io.wb.cyc) {
-        state := State.RemoteRequest
-      }
-    }
-    is(State.RemoteRequest) {
-      reqPort.tx.valid := 1.B
-
-      when(reqPort.tx.ready) {
-        when(pico.io.wb.we) {
-          pico.io.wb.ack := 1.B
-          state := State.Idle
-        } otherwise {
-          state := State.RemoteWait
-        }
-      }
-    }
-    is(State.RemoteWait) {
-      respPort.rx.ready := 1.B
-      when(respPort.rx.valid) {
-        pico.io.wb.ack := 1.B
-        state := State.Idle
-      }
-    }
-  }
+  pico.io.wb <> requesterNi.io.wb
 
 }
