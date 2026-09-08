@@ -51,13 +51,13 @@ object PicoRvConfig {
   )
 }
 
-object PicoRv {
+object PicoRvWb {
   implicit class BoolToInt(val b: Boolean) extends AnyVal {
     def toInt: Int = if (b) 1 else 0
   }
 }
 
-import PicoRv._
+import PicoRvWb._
 
 
 /**
@@ -76,7 +76,7 @@ import PicoRv._
   *
   * @param c config
   */
-class PicoRv(id: Int, c: PicoRvConfig) extends Module {
+class PicoRvWb(id: Int, c: PicoRvConfig) extends Module {
 
   val io = IO(new Bundle {
     val wb = new WishbonePort
@@ -99,7 +99,7 @@ class PicoRv(id: Int, c: PicoRvConfig) extends Module {
       0x?000_0014: Config (read/write)
    */
 
-  val core = Module(new PicoRvBlackBox(c))
+  val core = Module(new PicoRvWbBlackBox(c))
 
   val configReg = RegInit(0.U(1.W))
 
@@ -195,7 +195,7 @@ class PicoRv(id: Int, c: PicoRvConfig) extends Module {
 
 }
 
-class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
+class PicoRvWbBlackBox(c: PicoRvConfig) extends BlackBox(Map(
   "ENABLE_COUNTERS" -> c.enableCounters.toInt,
   "ENABLE_COUNTERS64" -> c.enableCounters64.toInt,
   "ENABLE_REGS_16_31" -> c.enableRegs16_31.toInt,
@@ -259,4 +259,212 @@ class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
 
   override val desiredName: String = "picorv32_wb"
   addPath("src/verilog/picorv32.v")
+}
+
+
+class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
+  "ENABLE_COUNTERS" -> c.enableCounters.toInt,
+  "ENABLE_COUNTERS64" -> c.enableCounters64.toInt,
+  "ENABLE_REGS_16_31" -> c.enableRegs16_31.toInt,
+  "ENABLE_REGS_DUALPORT" -> c.enableRegsDualPort.toInt,
+  "LATCHED_MEM_RDATA" -> 0,
+  "TWO_STAGE_SHIFT" -> c.twoStageShift.toInt,
+  "BARREL_SHIFTER" -> c.barrelShifter.toInt,
+  "TWO_CYCLE_COMPARE" -> c.twoCycleCompare.toInt,
+  "TWO_CYCLE_ALU" -> c.twoCycleAlu.toInt,
+  "COMPRESSED_ISA" -> c.compressedIsa.toInt,
+  "CATCH_MISALIGN" -> c.catchMisaligned.toInt,
+  "CATCH_ILLINSN" -> c.catchIllegalInstruction.toInt,
+  "ENABLE_PCPI" -> c.enablePcpi.toInt,
+  "ENABLE_MUL" -> c.enableMul.toInt,
+  "ENABLE_FAST_MUL" -> c.enableFastMul.toInt,
+  "ENABLE_DIV" -> c.enableDiv.toInt,
+  "ENABLE_IRQ" -> c.enableIrq.toInt,
+  "ENABLE_IRQ_QREGS" -> c.enableIrqQregs.toInt,
+  "ENABLE_IRQ_TIMER" -> c.enableIrqTimer.toInt,
+  "ENABLE_TRACE" -> c.enableTrace.toInt,
+  "REGS_INIT_ZERO" -> c.regsInitZero.toInt,
+  "MASKED_IRQ" -> c.maskedIrq,
+  "LATCHED_IRQ" -> c.latchedIrq,
+  "PROGADDR_RESET" -> c.progAddrReset,
+  "PROGADDR_IRQ" -> c.progAddrIrq,
+  "STACKADDR" -> c.stackAddr
+
+)) with HasBlackBoxPath {
+  val io = IO(new Bundle {
+
+    val trap = Output(Bool())
+
+    val clk = Input(Clock())
+    val resetn = Input(Bool())
+
+    val mem_valid = Output(Bool())
+    val mem_instr = Output(Bool())
+    val mem_ready = Input(Bool())
+
+    val mem_addr = Output(UInt(32.W))
+    val mem_wdata = Output(UInt(32.W))
+    val mem_wstrb = Output(UInt(4.W))
+    val mem_rdata = Input(UInt(32.W))
+
+    val mem_la_read = Output(Bool())
+    val mem_la_write = Output(Bool())
+    val mem_la_addr = Output(UInt(32.W))
+    val mem_la_wdata = Output(UInt(32.W))
+    val mem_la_wstrb = Output(UInt(4.W))
+
+    val pcpi_valid = Output(Bool())
+    val pcpi_insn = Output(UInt(32.W))
+    val pcpi_rs1 = Output(UInt(32.W))
+    val pcpi_rs2 = Output(UInt(32.W))
+    val pcpi_wr = Input(Bool())
+    val pcpi_rd = Input(UInt(32.W))
+    val pcpi_wait = Input(Bool())
+    val pcpi_ready = Input(Bool())
+
+    val irq = Input(UInt(32.W))
+    val eoi = Output(UInt(32.W))
+
+    val trace_valid = Output(Bool())
+    val trace_data = Output(UInt(36.W))
+  })
+
+  override val desiredName: String = "picorv32"
+  addPath("src/verilog/picorv32.v")
+}
+
+
+/**
+  * A wrapper around picorv32_wb with a local scratchpad (4x32 bit), boot address register, and reset control register.
+  * 
+  * Internal memory map (local to each core):
+  * 0xFFFF_0000: Core ID (read-only)
+  * 0x?100_0000: Scratchpad[0]
+  * 0x?100_0004: Scratchpad[1]
+  * 0x?100_0008: Scratchpad[2]
+  * 0x?100_000C: Scratchpad[3]
+  * 0x?100_0010: Boot Address (read/write)
+  * 0x?100_0014: Config (read/write)
+  * 
+  * The `remoteWb` interface allows external accesses to the core's local memory map. External accesses take priority over the core's own accesses.
+  *
+  * @param c config
+  */
+class PicoRv(id: Int, c: PicoRvConfig) extends Module {
+
+  val io = IO(new Bundle {
+    val wb = new WishbonePort
+    val remoteWb = Flipped(new WishbonePort)
+    val barrierArrived = Output(Bool())
+    val barrierRelease = Input(Bool())
+  })
+
+  io.barrierArrived := 0.B // default
+
+  /* 
+      0xFFFF_0000: Core ID (read-only)
+      0xFFFF_0004: Barrier (write-only, blocks until all cores have writte to their local barrier register)
+      0xFFFF_0008: Barrier enable (read/write, 1=enable, 0=disable)
+      0x?100_0000: Scratchpad[0]
+      0x?100_0004: Scratchpad[1]
+      0x?100_0008: Scratchpad[2]
+      0x?100_000C: Scratchpad[3]
+      0x?100_0010: Boot Address (read/write)
+      0x?000_0014: Config (read/write)
+   */
+
+  val core = Module(new PicoRvBlackBox(c))
+
+  val configReg = RegInit(0.U(1.W))
+
+  val scratchPad = Mem(4, UInt(32.W))
+
+  val bootAddr = RegInit(0x0800_0000.U(32.W))
+
+  val barrierEn = RegInit(0.B)
+
+  core.io.pcpi_wait := 0.B
+  core.io.pcpi_wr := 0.B
+  core.io.pcpi_ready := 0.B
+  core.io.pcpi_rd := 0.U
+  core.io.clk := clock
+  core.io.resetn := !(reset.asBool || configReg(0))
+  core.io.irq := 0.U
+
+
+  val isLocalAccess = core.io.mem_addr(31, 28) === id.U || core.io.mem_addr(31, 16) === 0xFFFFL.U
+
+
+  // pico to remote wishbone interface
+  io.wb.cyc := !isLocalAccess && core.io.mem_valid
+  io.wb.stb := !isLocalAccess && core.io.mem_valid
+  io.wb.we := core.io.mem_wstrb =/= 0.U
+  io.wb.adr := core.io.mem_addr
+  io.wb.wdata := core.io.mem_wdata
+  io.wb.sel := core.io.mem_wstrb
+
+
+  // access from remote core
+  val remoteScratchPadAccess = io.remoteWb.adr(27, 4) === 0x100_000.U
+  val remoteBootAddrAccess = io.remoteWb.adr(27, 0) === 0x100_0010.U
+  val remoteConfigAccess = io.remoteWb.adr(27, 0) === 0x100_0014.U
+
+  io.remoteWb.ack := io.remoteWb.cyc
+  io.remoteWb.rdata := MuxCase(0.U, Seq(
+    remoteScratchPadAccess -> scratchPad.read(io.remoteWb.adr(3, 2)),
+    remoteBootAddrAccess -> bootAddr,
+    remoteConfigAccess -> configReg
+  ))
+
+
+  // local access from pico core
+  val scratchPadAccess = core.io.mem_addr(27, 4) === 0x100_000.U
+  val coreIdAccess = core.io.mem_addr(31, 0) === 0xFFFF_0000L.U
+  val bootAddrAccess = core.io.mem_addr(27, 0) === 0x100_0010.U
+  val configAccess = core.io.mem_addr(27, 0) === 0x100_0014.U
+  val barrierAccess = core.io.mem_addr(31, 0) === 0xFFFF_0004L.U
+  val barrierEnAccess = core.io.mem_addr(31, 0) === 0xFFFF_0008L.U
+
+
+  val readData = MuxCase(0.U, Seq(
+    scratchPadAccess -> scratchPad.read(core.io.mem_addr(3, 2)),
+    coreIdAccess -> id.U,
+    bootAddrAccess -> bootAddr,
+    configAccess -> configReg,
+    barrierEnAccess -> barrierEn
+  ))
+  core.io.mem_rdata := Mux(isLocalAccess, readData, io.wb.rdata)
+  
+
+  // writes to local state
+  // remote write takes priority over local write
+  val remoteWrite = io.remoteWb.cyc && io.remoteWb.we
+  val picoLocalWrite = core.io.mem_valid && isLocalAccess && core.io.mem_wstrb =/= 0.U
+
+  when(remoteWrite && remoteScratchPadAccess) {
+    scratchPad.write(io.remoteWb.adr(3, 2), io.remoteWb.wdata)
+  }.elsewhen(picoLocalWrite && scratchPadAccess) {
+    scratchPad.write(core.io.mem_addr(3, 2), core.io.mem_wdata)
+  }
+
+  when(remoteWrite && remoteBootAddrAccess) {
+    bootAddr := io.remoteWb.wdata
+  }.elsewhen(picoLocalWrite && bootAddrAccess) {
+    bootAddr := core.io.mem_wdata
+  }
+
+  when(remoteWrite && remoteConfigAccess) {
+    configReg := io.remoteWb.wdata
+  }.elsewhen(picoLocalWrite && configAccess) {
+    configReg := core.io.mem_wdata
+  }
+
+  when(picoLocalWrite && barrierEnAccess) {
+    barrierEn := core.io.mem_wdata(0)
+  }
+
+  io.barrierArrived := Mux(barrierEn, picoLocalWrite && barrierAccess, 0.B)
+
+  core.io.mem_ready := Mux(barrierEn && picoLocalWrite && barrierAccess, io.barrierRelease, Mux(isLocalAccess, 1.B, io.wb.ack))
+
 }

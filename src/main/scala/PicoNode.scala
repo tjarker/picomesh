@@ -26,7 +26,7 @@ class PicoNode(id: Int, c: PicoRvConfig) extends Module with NocNode {
   val coreId = IO(Input(UInt(4.W)))
 
 
-  val pico = Module(new PicoRv(id, c))
+  val pico = Module(new PicoRvWb(id, c))
 
   pico.io.remoteWb.expand(
     _.cyc := io.networkPortReq.rx.valid && io.networkPortResp.tx.ready, // we wait with issuing the request until the resp.tx is ready
