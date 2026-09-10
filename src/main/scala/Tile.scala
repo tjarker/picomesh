@@ -7,15 +7,15 @@ import s4noc.S4Router
 import s4noc.Config
 import s4noc.Schedule
 
-class Tile[A <: Data, B <: Data](id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule) extends Module {
+class Tile[A <: Data, B <: Data](id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, responseWords: Int) extends Module {
 
   val io = IO(new Bundle {
     val req = Vec(Const.NR_OF_PORTS - 1, new ChannelIO(new MemoryRequest))
-    val resp = Vec(Const.NR_OF_PORTS - 1, new ChannelIO(new MemoryResponse))
+    val resp = Vec(Const.NR_OF_PORTS - 1, new ChannelIO(new MemoryResponse(responseWords)))
   })
 
   val reqRouter = Module(new CustomS4Router(reqSched.schedule, new MemoryRequest))
-  val respRouter = Module(new CustomS4Router(respSched.schedule, new MemoryResponse))
+  val respRouter = Module(new CustomS4Router(respSched.schedule, new MemoryResponse(responseWords)))
 
   val reqSlotCounter = RegInit(0.U(log2Ceil(reqSched.schedule.length).W))
   val endReqCnt = reqSlotCounter === (reqSched.schedule.length - 1).U

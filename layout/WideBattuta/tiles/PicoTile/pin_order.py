@@ -33,6 +33,8 @@ interleaved_bus(["io_req_0_out_data_addr", "io_req_0_in_data_addr"], range(28))
 
 signal("clock")
 signal("reset")
+signal("barrierPort_barrierArrived")
+signal("barrierPort_barrierRelease")
 
 signal("io_resp_0_out_valid")
 signal("io_resp_0_in_valid")

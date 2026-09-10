@@ -26,20 +26,27 @@ select -type Inst -name "array.coreTiles_4*"   -highlight 5
 select -type Inst -name "array.coreTiles_5*"   -highlight 6
 select -type Inst -name "array.accessTile*"   -highlight 7
 
-select -type Inst -name "array.coreTiles_0.reqNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_1.reqNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_2.reqNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_3.reqNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_4.reqNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_5.reqNi*"   -highlight 8
+select -type Inst -name "array.coreTiles_0.requesterNi*"   -highlight 0
+select -type Inst -name "array.coreTiles_1.requesterNi*"   -highlight 0
+select -type Inst -name "array.coreTiles_2.requesterNi*"   -highlight 0
+select -type Inst -name "array.coreTiles_3.requesterNi*"   -highlight 0
+select -type Inst -name "array.coreTiles_4.requesterNi*"   -highlight 0
+select -type Inst -name "array.coreTiles_5.requesterNi*"   -highlight 0
+
+select -type Inst -name "array.coreTiles_0.reqRouter*"   -highlight 0
+select -type Inst -name "array.coreTiles_1.reqRouter*"   -highlight 0
+select -type Inst -name "array.coreTiles_2.reqRouter*"   -highlight 0
+select -type Inst -name "array.coreTiles_3.reqRouter*"   -highlight 0
+select -type Inst -name "array.coreTiles_4.reqRouter*"   -highlight 0
+select -type Inst -name "array.coreTiles_5.reqRouter*"   -highlight 0
 
 
-select -type Inst -name "array.coreTiles_0.respNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_1.respNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_2.respNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_3.respNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_4.respNi*"   -highlight 8
-select -type Inst -name "array.coreTiles_5.respNi*"   -highlight 8
+select -type Inst -name "array.coreTiles_0.responderNi*"   -highlight 8
+select -type Inst -name "array.coreTiles_1.responderNi*"   -highlight 8
+select -type Inst -name "array.coreTiles_2.responderNi*"   -highlight 8
+select -type Inst -name "array.coreTiles_3.responderNi*"   -highlight 8
+select -type Inst -name "array.coreTiles_4.responderNi*"   -highlight 8
+select -type Inst -name "array.coreTiles_5.responderNi*"   -highlight 8
 
 select -type Inst -name "array.coreTiles_0.respRouter*"   -highlight 8
 select -type Inst -name "array.coreTiles_1.respRouter*"   -highlight 8
@@ -48,9 +55,3 @@ select -type Inst -name "array.coreTiles_3.respRouter*"   -highlight 8
 select -type Inst -name "array.coreTiles_4.respRouter*"   -highlight 8
 select -type Inst -name "array.coreTiles_5.respRouter*"   -highlight 8
 
-select -type Inst -name "array.coreTiles_0.reqRouter*"   -highlight 8
-select -type Inst -name "array.coreTiles_1.reqRouter*"   -highlight 8
-select -type Inst -name "array.coreTiles_2.reqRouter*"   -highlight 8
-select -type Inst -name "array.coreTiles_3.reqRouter*"   -highlight 8
-select -type Inst -name "array.coreTiles_4.reqRouter*"   -highlight 8
-select -type Inst -name "array.coreTiles_5.reqRouter*"   -highlight 8

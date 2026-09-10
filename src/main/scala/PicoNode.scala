@@ -20,7 +20,7 @@ class PicoNode(id: Int, c: PicoRvConfig) extends Module with NocNode {
 
   val io = IO(new Bundle {
     val networkPortReq = new ReadyValidChannelsIO(Entry(new MemoryRequest))
-    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse))
+    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse(1)))
   })
 
   val coreId = IO(Input(UInt(4.W)))
@@ -103,7 +103,7 @@ class PicoNode(id: Int, c: PicoRvConfig) extends Module with NocNode {
 class LocalAccess extends Module {
   val io = IO(new Bundle {
     val req = Flipped(Decoupled(new MemoryRequest))
-    val resp = Decoupled(new MemoryResponse)
+    val resp = Decoupled(new MemoryResponse(1))
   })
 
   val scratchPad = Mem(4, UInt(32.W))

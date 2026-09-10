@@ -18,7 +18,7 @@ object PicoTile extends App {
   emitVerilog(new PicoTile(0, conf, Schedule(3), new InvertedSchedule(3), PicoRvConfig.small), Array("--target-dir", "generated"))
 }
 
-class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig) extends Tile(id, conf, reqSched, respSched) {
+class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig) extends Tile(id, conf, reqSched, respSched, 1) {
 
   val barrierPort = IO(new Bundle {
     val barrierArrived = Output(Bool())
@@ -31,8 +31,8 @@ class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSch
   barrierPort.barrierArrived := pico.io.barrierArrived
 
 
-  val requesterNi = Module(new BlockingRequesterNi(id, reqSched, respSched))
-  val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8).filter(_ != id)))
+  val requesterNi = Module(new BlockingRequesterNi(id, reqSched, respSched, 1))
+  val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8).filter(_ != id), 1))
 
   reqRouter.io.ports(Const.LOCAL).in := requesterNi.io.reqIngress
   requesterNi.io.respEgress := respRouter.io.ports(Const.LOCAL).out
@@ -57,5 +57,55 @@ class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSch
   responderNi.io.rdData := pico.io.remoteWb.rdata
 
   pico.io.wb <> requesterNi.io.wb
+
+}
+
+class WidePicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig) extends Tile(id, conf, reqSched, respSched, 4) {
+
+  val barrierPort = IO(new Bundle {
+    val barrierArrived = Output(Bool())
+    val barrierRelease = Input(Bool())
+  })
+
+  val instrCheckPort = IO(new Bundle {
+    val addr = Output(UInt(32.W))
+    val instr = Input(UInt(32.W))
+  })
+
+  val pico = Module(new PrefetchPicoRv(id, picoConf))
+  
+  pico.io.barrierRelease := barrierPort.barrierRelease
+  barrierPort.barrierArrived := pico.io.barrierArrived
+
+  instrCheckPort.addr := pico.io.instrCheck.addr
+  pico.io.instrCheck.instr := instrCheckPort.instr
+
+  val requesterNi = Module(new DualBlockingRequesterNi(id, reqSched, respSched))
+  val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8).filter(_ != id), 1))
+
+  reqRouter.io.ports(Const.LOCAL).in := requesterNi.io.reqIngress
+  requesterNi.io.respEgress := respRouter.io.ports(Const.LOCAL).out
+  responderNi.io.reqEgress := reqRouter.io.ports(Const.LOCAL).out
+  respRouter.io.ports(Const.LOCAL).in := responderNi.io.respIngress
+  responderNi.io.reqLookAhead <> reqRouter.localPortLookahead
+
+  requesterNi.io.reqSlot := reqSlotCounter
+  requesterNi.io.respSlot := respSlotCounter
+  responderNi.io.reqSlot := reqSlotCounter
+  responderNi.io.respSlot := respSlotCounter
+
+
+  pico.io.remoteWb.expand(
+    _.cyc := responderNi.io.comMemReq.valid,
+    _.stb := responderNi.io.comMemReq.wr,
+    _.adr := responderNi.io.comMemReq.addr,
+    _.wdata := responderNi.io.comMemReq.wrData,
+    _.we := responderNi.io.comMemReq.wr,
+    _.sel := "b1111".U
+  )
+  responderNi.io.rdData := pico.io.remoteWb.rdata
+
+  requesterNi.io.wbData <> pico.io.wb
+  requesterNi.io.instrPort <> pico.io.instrPort
 
 }

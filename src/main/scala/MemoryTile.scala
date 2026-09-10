@@ -3,12 +3,12 @@ import chisel3._
 import Util._
 import s4noc.Schedule
 
-class MemoryTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule) extends Tile(id, conf, reqSched, respSched) {
+class MemoryTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule, responseWords: Int) extends Tile(id, conf, reqSched, respSched, responseWords) {
   
 
   val mem = Module(new sky130_sram_1kbyte_1rw1r_32x256_8)
 
-  val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8)))
+  val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8), 1))
 
   responderNi.io.reqEgress <> reqLocal.out
   responderNi.io.respIngress <> respLocal.in

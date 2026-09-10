@@ -30,7 +30,7 @@ class PicoMeshBig(c: PicoRvConfig, bootBinPath: String, romBinPath: String) exte
   
 
   val s4nocReq = Module(new CustomS4NoC(9, new MemoryRequest, Seq.range(0, 9)))
-  val s4nocResp = Module(new CustomS4NoC(9, new MemoryResponse, Seq.range(0, 9)))
+  val s4nocResp = Module(new CustomS4NoC(9, new MemoryResponse(1), Seq.range(0, 9)))
 
   val picoConf = c.copy(
     progAddrReset = 0x0000_0000,

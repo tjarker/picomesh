@@ -9,7 +9,7 @@ import Util._
 class RomNode(program: Seq[BigInt]) extends Module with NocNode {
   val io = IO(new Bundle {
     val networkPortReq = new ReadyValidChannelsIO(Entry(new MemoryRequest))
-    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse))
+    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse(1)))
   })
 
   val rom = VecInit(program.map(_.U(32.W)))

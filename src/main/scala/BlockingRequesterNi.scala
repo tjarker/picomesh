@@ -3,15 +3,15 @@ import chisel3.util._
 import s4noc.Schedule
 import s4noc.SingleChannelIO
 
-class BlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSchedule) extends Module {
+class BlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSchedule, responseWords: Int) extends Module {
 
   val io = IO(new Bundle {
     val reqIngress = Output(new SingleChannelIO(new MemoryRequest))
-    val respEgress = Input(new SingleChannelIO(new MemoryResponse))
+    val respEgress = Input(new SingleChannelIO(new MemoryResponse(responseWords)))
     val reqSlot = Input(UInt(log2Ceil(reqSched.len).W))
     val respSlot = Input(UInt(log2Ceil(respSched.len).W))
 
-    val wb = Flipped(new WishbonePort)
+    val wb = Flipped(new WishbonePort(responseWords))
   })
 
   val translationTableReqSend = VecInit.tabulate(reqSched.len) { i =>
@@ -77,6 +77,141 @@ class BlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSchedu
         io.wb.ack := 1.B
       }.otherwise {
         stateReg := State.WaitForResp
+      }
+    }
+  }
+
+
+
+}
+
+
+
+
+class DualBlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSchedule) extends Module {
+
+  val io = IO(new Bundle {
+    val reqIngress = Output(new SingleChannelIO(new MemoryRequest))
+    val respEgress = Input(new SingleChannelIO(new MemoryResponse(4)))
+    val reqSlot = Input(UInt(log2Ceil(reqSched.len).W))
+    val respSlot = Input(UInt(log2Ceil(respSched.len).W))
+
+    val wbData = Flipped(new WishbonePort(1))
+    val instrPort = new Bundle {
+      val valid = Input(Bool())
+      val accepted = Output(Bool())
+      val ready = Output(Bool())
+      val addr = Input(UInt(32.W))
+      val bundle = Output(UInt(128.W))
+    }
+    val instrReqInTransit = Output(Bool())
+  })
+
+  val translationTableReqSend = VecInit.tabulate(reqSched.len) { i =>
+    val dest = reqSched.timeToDest(id, i).dest
+    if (dest != -1) dest.U else 0.U
+  }
+  val validReqSlot = VecInit.tabulate(reqSched.len) { i =>
+    val dest = reqSched.timeToDest(id, i).dest
+    if (dest != -1) true.B else false.B
+  }
+  val translationTableRespRcv = VecInit.tabulate(respSched.len) { i =>
+    val src = respSched.timeToSource(id, i)
+    if (src != -1) src.U else 0.U
+  }
+
+  val sendSlotTo = translationTableReqSend(io.reqSlot)
+  val validSendSlot = validReqSlot(io.reqSlot)
+  val recvSlotFrom = translationTableRespRcv(io.respSlot)
+
+  val destIdData = io.wbData.adr(31, 28)
+  val destIdInstr = io.instrPort.addr(31, 28)
+
+  object State extends ChiselEnum {
+    val Idle, WaitForReqSlot, WaitForResp = Value
+  }
+
+  val stateRegData = RegInit(State.Idle)
+  val stateRegInstr = RegInit(State.Idle)
+
+  val sendSlotMatchData = validSendSlot && sendSlotTo === destIdData
+  val sendSlotMatchInstr = validSendSlot && sendSlotTo === destIdInstr
+
+  val receiveSlotMatchAndValidData = io.respEgress.valid && recvSlotFrom === destIdData
+  val receiveSlotMatchAndValidInstr = io.respEgress.valid && recvSlotFrom === destIdInstr
+
+  val collision = (destIdData === destIdInstr) && io.instrPort.valid
+
+  io.reqIngress.valid := 0.B
+  io.reqIngress.data.addr := io.instrPort.addr(27, 0)
+  io.reqIngress.data.data := io.wbData.wdata
+  io.reqIngress.data.write := 0.B
+  io.wbData.rdata := io.respEgress.data.data
+  io.wbData.ack := 0.B
+
+  io.instrPort.bundle := io.respEgress.data.data
+  io.instrPort.ready := 0.B
+  io.instrPort.accepted := 0.B
+
+  switch(stateRegData) {
+    is(State.Idle) {
+      when(io.wbData.cyc) {
+        when(sendSlotMatchData && !collision) {
+          stateRegData := State.WaitForResp
+          io.reqIngress.valid := 1.B
+          io.reqIngress.data.addr := io.wbData.adr(27, 0)
+          io.reqIngress.data.write := io.wbData.we
+        }.otherwise {
+          stateRegData := State.WaitForReqSlot
+        }
+      }
+    }
+    is(State.WaitForReqSlot) {
+      when(sendSlotMatchData && !collision) {
+          stateRegData := State.WaitForResp
+          io.reqIngress.valid := 1.B
+          io.reqIngress.data.addr := io.wbData.adr(27, 0)
+          io.reqIngress.data.write := io.wbData.we
+        }
+    }
+    is(State.WaitForResp) {
+      when(receiveSlotMatchAndValidData) {
+        stateRegData := State.Idle
+        io.wbData.ack := 1.B
+      }.otherwise {
+        stateRegData := State.WaitForResp
+      }
+    }
+  }
+
+  io.instrReqInTransit := 0.B
+
+  switch(stateRegInstr) {
+    is(State.Idle) {
+      when(io.instrPort.valid) {
+        when(sendSlotMatchInstr) {
+          io.instrPort.accepted := 1.B
+          stateRegInstr := State.WaitForResp
+          io.reqIngress.valid := 1.B
+        }.otherwise {
+          stateRegInstr := State.WaitForReqSlot
+        }
+      }
+    }
+    is(State.WaitForReqSlot) {
+      when(sendSlotMatchInstr) {
+        stateRegInstr := State.WaitForResp
+        io.reqIngress.valid := 1.B
+        io.instrPort.accepted := 1.B
+      }
+    }
+    is(State.WaitForResp) {
+      io.instrReqInTransit := 1.B
+      when(receiveSlotMatchAndValidInstr) {
+        stateRegInstr := State.Idle
+        io.instrPort.ready := 1.B
+      }.otherwise {
+        stateRegInstr := State.WaitForResp
       }
     }
   }

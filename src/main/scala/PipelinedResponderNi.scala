@@ -5,12 +5,12 @@ import s4noc.Schedule
 import s4noc.SingleChannelIO
 import Util._
 
-class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSchedule, validEndPoints: Seq[Int]) extends Module {
+class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSchedule, validEndPoints: Seq[Int], responseWords: Int) extends Module {
 
   val io = IO(new Bundle {
     val reqEgress = Input(new SingleChannelIO(new MemoryRequest))
     val reqLookAhead = Input(new SingleChannelIO(new MemoryRequest))
-    val respIngress = Output(new SingleChannelIO(new MemoryResponse))
+    val respIngress = Output(new SingleChannelIO(new MemoryResponse(responseWords)))
     val reqSlot = Input(UInt(log2Ceil(reqSched.len).W))
     val respSlot = Input(UInt(log2Ceil(respSched.len).W))
 
@@ -28,7 +28,7 @@ class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSched
       val wr = Output(Bool())
     }
 
-    val rdData = Input(UInt(32.W))
+    val rdData = Input(UInt((32 * responseWords).W))
   })
 
   val translationTableReqRcv = VecInit.tabulate(reqSched.len) { i =>
@@ -64,7 +64,7 @@ class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSched
 
 
   val (splitValids, splitBuffers) = validEndPoints.map { i =>
-    val buffer = Reg(UInt(32.W))
+    val buffer = Reg(UInt((32 * responseWords).W))
     val valid = RegInit(false.B)
 
     val isActiveSender = sendSlotTo === i.U
@@ -80,7 +80,7 @@ class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSched
     }
 
     // mask buffer output with isActiveSender
-    (valid && isActiveSender, buffer & Fill(32, isActiveSender))
+    (valid && isActiveSender, buffer & Fill(32 * responseWords, isActiveSender))
   }.unzip
 
 

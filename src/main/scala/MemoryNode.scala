@@ -7,7 +7,7 @@ import Util._
 class MemoryNode extends Module with NocNode {
   val io = IO(new Bundle {
     val networkPortReq = new ReadyValidChannelsIO(Entry(new MemoryRequest))
-    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse))
+    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse(1)))
   })
 
   val mem = SyncReadMem(1024, UInt(32.W))
@@ -55,7 +55,7 @@ class MemoryNode extends Module with NocNode {
 class OpenRamMemoryNode extends Module with NocNode {
   val io = IO(new Bundle {
     val networkPortReq = new ReadyValidChannelsIO(Entry(new MemoryRequest))
-    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse))
+    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse(1)))
   })
 
   val mem = Module(new sky130_sram_1kbyte_1rw1r_32x256_8)
@@ -103,7 +103,7 @@ class OpenRamMemoryNode extends Module with NocNode {
 class OpenRamAndRomMemoryNode extends Module with NocNode {
   val io = IO(new Bundle {
     val networkPortReq = new ReadyValidChannelsIO(Entry(new MemoryRequest))
-    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse))
+    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse(1)))
   })
 
   val mem = Module(new sky130_sram_1kbyte_1rw1r_32x256_8)
