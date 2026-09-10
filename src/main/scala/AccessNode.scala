@@ -11,7 +11,7 @@ class AccessNode(bootBinPath: String, romBinPath: String) extends Module {
 
   val io = IO(new Bundle {
     val networkPortReq = new ReadyValidChannelsIO(Entry(new MemoryRequest))
-    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse))
+    val networkPortResp = new ReadyValidChannelsIO(Entry(new MemoryResponse(1)))
     val pontePort = Flipped(new ponte.PonteAccessPort)
   })
 

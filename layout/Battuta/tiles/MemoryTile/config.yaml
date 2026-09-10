@@ -1,0 +1,75 @@
+DESIGN_NAME: MemoryTile
+VERILOG_FILES:
+  - dir::../../../../generated/Battuta.v
+  - dir::../../../../src/verilog/picorv32.v
+
+VDD_NETS: ["vccd1"]
+GND_NETS: ["vssd1"]
+
+CLOCK_PORT: clock
+CLOCK_PERIOD: 8
+
+TIMING_VIOLATION_CORNERS: []
+
+PNR_SDC_FILE: dir::constr.sdc
+SIGNOFF_SDC_FILE: dir::constr.sdc
+FALLBACK_SDC: dir::../../base.sdc
+
+STA_CORNERS:
+ - nom_tt_025C_1v80
+ - min_tt_025C_1v80
+ - max_tt_025C_1v80
+
+FP_PDN_MULTILAYER: true
+FP_PDN_CORE_RING: true
+#RT_MAX_LAYER: met4
+GRT_ALLOW_CONGESTION: true
+# DESIGN_REPAIR_MAX_SLEW_PCT: 12
+# DESIGN_REPAIR_MAX_CAP_PCT: 12
+# GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 12
+# GRT_DESIGN_REPAIR_MAX_CAP_PCT: 12
+# RUN_ANTENNA_REPAIR: true
+# GRT_ANTENNA_ITERS: 10
+
+#GRT_ALLOW_CONGESTION: true
+
+PL_TARGET_DENSITY_PCT: 75
+FP_CORE_UTIL: 60
+#FP_ASPECT_RATIO: 1.5
+FP_PIN_ORDER_CFG: dir::pin_order.cfg
+FP_SIZING: absolute
+DIE_AREA: [0, 0, 620, 520]
+SYNTH_AUTONAME: true
+#FP_DEF_TEMPLATE: template.def
+# FP_OBSTRUCTIONS:
+#   - [330, 330, 550, 550]
+# ROUTING_OBSTRUCTIONS:
+#   - "met1 330 330 550 550"
+#   - "met2 330 330 550 550"
+#   - "met3 330 330 550 550"
+#   - "met4 330 330 550 550"
+#   - "met5 330 330 550 550"
+# PDN_OBSTRUCTIONS:
+#   - "met4 330 330 550 550"
+#   - "met5 330 330 550 550"
+# SYNTH_AUTONAME: true
+# SYNTH_HIERARCHY_MODE: keep
+#SYNTH_SIZING: true
+#SYNTH_STRATEGY: "DELAY 0"
+
+# PL_WIRE_LENGTH_COEF: 0.10
+# DESIGN_REPAIR_MAX_WIRE_LENGTH: 300
+# GRT_ANTENNA_MARGIN: 25
+# GRT_ANTENNA_ITERS: 40
+
+MACROS:
+  sky130_sram_1kbyte_1rw1r_32x256_8:
+    instances:
+      mem:
+        location: [70, 25]
+        orientation: S
+    gds: pdk_dir::libs.ref/sky130_sram_macros//gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
+    lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
+    nl: pdk_dir::libs.ref/sky130_sram_macros/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v
+    lib:
+      "*": pdk_dir::libs.ref/sky130_sram_macros/lib/sky130_sram_1kbyte_1rw1r_32x256_8_TT_1p8V_25C.lib

@@ -63,7 +63,7 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
   // TX
   // in/out direction is from the network view
   // flipped here
-  val txFifo = bubbleFifo(dt, 1)
+  val txFifo = doubleBubbleFifo(dt, 1)
   io.networkPort.tx <> txFifo.io.enq
 
   // val toCore = translationTable(txFifo.io.deq.bits.core)
@@ -71,7 +71,7 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
 
   // TODO: Minimum should be a single register. Could be enough in most cases.
   // TODO: we are wasting resources when also having the core # in this FIFO
-  val splitBuffers = (0 until conf.n).map(_ => dummyFifo(dt, 1))
+  val splitBuffers = (0 until conf.n).map(_ => bubbleFifo(dt, 1))
   for (i <- 0 until conf.n) {
     splitBuffers(i).io.enq.bits.data := txFifo.io.deq.bits.data
     splitBuffers(i).io.enq.bits.core := i.U
@@ -109,7 +109,7 @@ class CustomNetworkInterface[T <: Data](id: Int, conf: Config, dt: T) extends Mo
   io.local.in.valid := valid
 
   // RX
-  val rxFifo = doubleBubbleFifo(dt, 6)
+  val rxFifo = doubleBubbleFifo(dt, 1)
   // rxFifo.io.enq.ready is ignored. When the FIFO is full, packets are simply dropped.
   rxFifo.io.enq.valid := io.local.out.valid
   rxFifo.io.enq.bits.data := io.local.out.data

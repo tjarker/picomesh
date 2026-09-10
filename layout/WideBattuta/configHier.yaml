@@ -1,0 +1,157 @@
+DESIGN_NAME: Battuta
+VERILOG_FILES:
+  - dir::../../generated/Battuta.v
+  - dir::../../src/verilog/picorv32.v
+
+VDD_NETS: ["vccd1"]
+GND_NETS: ["vssd1"]
+
+CLOCK_PORT: clock
+CLOCK_PERIOD: 10
+
+TIMING_VIOLATION_CORNERS: []
+
+STA_CORNERS:
+ - nom_tt_025C_1v80
+ - min_tt_025C_1v80
+ - max_tt_025C_1v80
+
+FP_PDN_MULTILAYER: true
+FP_PDN_CORE_RING: true
+#RT_MAX_LAYER: met4
+#GRT_ALLOW_CONGESTION: true
+
+# DESIGN_REPAIR_MAX_SLEW_PCT: 12
+# DESIGN_REPAIR_MAX_CAP_PCT: 12
+# GRT_DESIGN_REPAIR_MAX_SLEW_PCT: 12
+# GRT_DESIGN_REPAIR_MAX_CAP_PCT: 12
+# RUN_ANTENNA_REPAIR: true
+# GRT_ANTENNA_ITERS: 10
+
+#GRT_ALLOW_CONGESTION: true
+
+GRT_ANTENNA_REPAIR_DIODE_ONLY: true
+PRIMARY_GDSII_STREAMOUT_TOOL: "klayout"
+MAGIC_CAPTURE_ERRORS: false
+
+FALLBACK_SDC: dir::base.sdc
+
+PL_TARGET_DENSITY_PCT: 40
+FP_CORE_UTIL: 40
+#FP_ASPECT_RATIO: 1.5
+FP_PIN_ORDER_CFG: dir::pin_order.cfg
+FP_SIZING: absolute
+DIE_AREA: [0, 0, 2000, 2000]
+SYNTH_AUTONAME: true
+#FP_DEF_TEMPLATE: template.def
+# FP_OBSTRUCTIONS:
+#   - [330, 330, 550, 550]
+# ROUTING_OBSTRUCTIONS:
+#   - "met1 330 330 550 550"
+#   - "met2 330 330 550 550"
+#   - "met3 330 330 550 550"
+#   - "met4 330 330 550 550"
+#   - "met5 330 330 550 550"
+# PDN_OBSTRUCTIONS:
+#   - "met4 330 330 550 550"
+#   - "met5 330 330 550 550"
+# SYNTH_AUTONAME: true
+# SYNTH_HIERARCHY_MODE: keep
+#SYNTH_SIZING: true
+#SYNTH_STRATEGY: "DELAY 0"
+
+# PL_WIRE_LENGTH_COEF: 0.10
+# DESIGN_REPAIR_MAX_WIRE_LENGTH: 300
+# GRT_ANTENNA_MARGIN: 25
+# GRT_ANTENNA_ITERS: 40
+
+ERROR_ON_LVS_ERROR: false
+
+MACROS:
+  sky130_sram_1kbyte_1rw1r_32x256_8:
+    instances:
+      array.memLowTile.mem:
+        location: [730, 100]
+        orientation: FS
+      array.memHighTile.mem:
+        location: [1360, 100]
+        orientation: S
+    gds: dir::../../../gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
+    lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
+    nl: pdk_dir::libs.ref/sky130_sram_macros/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v
+
+  PicoTile:
+    instances:
+      array.coreTiles_0:
+        location: [100, 730]
+        orientation: N
+    gds: dir::/../../build/layout/Battuta/tiles/PicoTile/gds/PicoTile.gds
+    lef: dir::/../../build/layout/Battuta/tiles/PicoTile/lef/PicoTile.lef
+    nl: dir::/../../build/layout/Battuta/tiles/PicoTile/nl/PicoTile.nl.v
+    lib:
+      "*": dir::/../../build/layout/Battuta/tiles/PicoTile/lib/nom_tt_025C_1v80/PicoTile__nom_tt_025C_1v80.lib
+
+  PicoTile_1:
+    instances:
+      array.coreTiles_1:
+        location: [730, 730]
+        orientation: N
+    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_1/gds/PicoTile_1.gds
+    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_1/lef/PicoTile_1.lef
+    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_1/nl/PicoTile_1.nl.v
+    lib:
+      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_1/lib/nom_tt_025C_1v80/PicoTile_1__nom_tt_025C_1v80.lib
+
+  PicoTile_2:
+    instances:
+      array.coreTiles_2:
+        location: [1360, 730]
+        orientation: N
+    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_2/gds/PicoTile_2.gds
+    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_2/lef/PicoTile_2.lef
+    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_2/nl/PicoTile_2.nl.v
+    lib:
+      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_2/lib/nom_tt_025C_1v80/PicoTile_2__nom_tt_025C_1v80.lib
+
+  PicoTile_3:
+    instances:
+      array.coreTiles_3:
+        location: [100, 1360]
+        orientation: N
+    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_3/gds/PicoTile_3.gds
+    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_3/lef/PicoTile_3.lef
+    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_3/nl/PicoTile_3.nl.v
+    lib:
+      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_3/lib/nom_tt_025C_1v80/PicoTile_3__nom_tt_025C_1v80.lib
+
+  PicoTile_4:
+    instances:
+      array.coreTiles_4:
+        location: [730, 1360]
+        orientation: N
+    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_4/gds/PicoTile_4.gds
+    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_4/lef/PicoTile_4.lef
+    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_4/nl/PicoTile_4.nl.v
+    lib:
+      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_4/lib/nom_tt_025C_1v80/PicoTile_4__nom_tt_025C_1v80.lib
+  
+  PicoTile_5:
+    instances:
+      array.coreTiles_5:
+        location: [1360, 1360]
+        orientation: N
+    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_5/gds/PicoTile_5.gds
+    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_5/lef/PicoTile_5.lef
+    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_5/nl/PicoTile_5.nl.v
+    lib:
+      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_5/lib/nom_tt_025C_1v80/PicoTile_5__nom_tt_025C_1v80.lib
+
+PDN_MACRO_CONNECTIONS:
+  - "array.memLowTile.mem vccd1 vssd1 vccd1 vssd1"
+  - "array.memHighTile.mem vccd1 vssd1 vccd1 vssd1"
+  - "array.coreTiles_0 vccd1 vssd1 vccd1 vssd1"
+  - "array.coreTiles_1 vccd1 vssd1 vccd1 vssd1"
+  - "array.coreTiles_2 vccd1 vssd1 vccd1 vssd1"
+  - "array.coreTiles_3 vccd1 vssd1 vccd1 vssd1"
+  - "array.coreTiles_4 vccd1 vssd1 vccd1 vssd1"
+  - "array.coreTiles_5 vccd1 vssd1 vccd1 vssd1"

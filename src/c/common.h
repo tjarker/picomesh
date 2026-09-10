@@ -2,6 +2,9 @@
 
 volatile uint32_t* const CORE_TAG = (volatile uint32_t*)0xFFFF0000;
 
+volatile uint32_t* const BARRIER = (volatile uint32_t*)0xFFFF0004;
+volatile uint32_t* const BARRIER_EN = (volatile uint32_t*)0xFFFF0008;
+
 
 volatile uint32_t* const MEM = (volatile uint32_t*)(0x1FFFFC00);
 
@@ -46,4 +49,16 @@ inline volatile uint32_t *local_config_reg() {
 inline volatile uint32_t *config_reg(uint32_t coreId) {
   uint32_t coreAddr = core_id_to_addr(coreId);
   return (volatile uint32_t*)(coreAddr | 0x01000014);
+}
+
+void barrier_enable() {
+  *BARRIER_EN = 1;
+}
+
+void barrier_disable() {
+  *BARRIER_EN = 0;
+}
+
+void barrier_wait() {
+  *BARRIER = 1;
 }

@@ -5,7 +5,9 @@ scalacOptions ++= Seq(
   "-language:reflectiveCalls",
 )
 fork := true
-
+javaOptions += "--add-exports=java.base/jdk.internal.vm=ALL-UNNAMED"
+javaOptions += "--enable-native-access=ALL-UNNAMED"
+javacOptions += "--add-exports=java.base/jdk.internal.vm=ALL-UNNAMED"
 
 scalaVersion := "2.13.14"
 val chiselVersion = "3.6.1"

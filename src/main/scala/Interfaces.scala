@@ -8,12 +8,12 @@ class MemoryRequest extends Bundle {
   val write = Bool()
 }
 
-class MemoryResponse extends Bundle {
-  val data = UInt(32.W)
+class MemoryResponse(words: Int) extends Bundle {
+  val data = UInt((32 * words).W)
 }
 
 
 class MemoryPort extends Bundle {
   val req = Decoupled(new MemoryRequest)
-  val resp = Flipped(Decoupled(new MemoryResponse))
+  val resp = Flipped(Decoupled(new MemoryResponse(1)))
 }
