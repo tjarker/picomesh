@@ -1,6 +1,7 @@
 
 import chisel3._
 import chisel3.util._
+import chisel3.util.experimental.loadMemoryFromFileInline
 
 import Util._
 
@@ -55,7 +56,16 @@ class AccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: Inv
 
 }
 
-class WideAccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule, bootBinPath: String, romBinPath: String) extends Tile(id, conf, reqSched, respSched, 4) {
+/** Where the wide access node's program ROM gets its contents. */
+sealed trait ProgramRom
+object ProgramRom {
+  /** Baked into the design at elaboration, as taped out. */
+  case class Baked(binPath: String) extends ProgramRom
+  /** 2^lineBits bundles of 4 words read by $readmemh when the simulation starts, so one model serves any program. */
+  case class Loaded(hexPath: String, lineBits: Int) extends ProgramRom
+}
+
+class WideAccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule, bootBinPath: String, prog: ProgramRom) extends Tile(id, conf, reqSched, respSched, 4) {
 
   val pontePort = IO(Flipped(new ponte.PonteAccessPort))
 
@@ -99,20 +109,31 @@ class WideAccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched:
   }.toSeq
   val bootRom = VecInit(bootBinWordsPacked.map(_.U(128.W)))
 
-  val progBinWords = Util.Binary.load(romBinPath)
-  val progBinWordsPacked = progBinWords.grouped(4).map { group =>
-    group.zipWithIndex.map { case (word, idx) =>
-      word << (idx * 32)
-    }.reduce(_ | _)
-  }.toSeq
-  val progRom = VecInit(progBinWordsPacked.map(_.U(128.W)))
+  val readData = prog match {
+    case ProgramRom.Baked(romBinPath) =>
+      val progBinWords = Util.Binary.load(romBinPath)
+      val progBinWordsPacked = progBinWords.grouped(4).map { group =>
+        group.zipWithIndex.map { case (word, idx) =>
+          word << (idx * 32)
+        }.reduce(_ | _)
+      }.toSeq
+      val progRom = VecInit(progBinWordsPacked.map(_.U(128.W)))
 
+      Mux(
+        responderNi.io.comMemReq.addr(27),
+        progRom(responderNi.io.comMemReq.addr(26, 4)),
+        bootRom(responderNi.io.comMemReq.addr(26, 4))
+      )
+    case ProgramRom.Loaded(hexPath, lineBits) =>
+      val progRom = Mem(1 << lineBits, UInt(128.W))
+      loadMemoryFromFileInline(progRom, new java.io.File(hexPath).getAbsolutePath)
 
-  val readData = Mux(
-    responderNi.io.comMemReq.addr(27),
-    progRom(responderNi.io.comMemReq.addr(26, 4)),
-    bootRom(responderNi.io.comMemReq.addr(26, 4))
-  )
+      Mux(
+        responderNi.io.comMemReq.addr(27),
+        progRom(responderNi.io.comMemReq.addr(lineBits + 3, 4)),
+        bootRom(responderNi.io.comMemReq.addr(26, 4))
+      )
+  }
   responderNi.io.rdData := readData
 
 }

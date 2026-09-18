@@ -4,3 +4,6 @@
 [submodule "ip-contributions"]
 	path = ip-contributions
 	url = https://github.com/freechipsproject/ip-contributions.git
+[submodule "third_party/tacle-bench"]
+	path = third_party/tacle-bench
+	url = https://github.com/tacle/tacle-bench.git

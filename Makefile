@@ -155,3 +155,5 @@ comp-barrier_demo:
 		-o build/barrier_demo/barrier_demo.elf src/c/barrier_demo.c
 	riscv64-unknown-elf-objcopy -O binary build/barrier_demo/barrier_demo.elf build/barrier_demo/barrier_demo.bin
 	riscv64-unknown-elf-objdump -d build/barrier_demo/barrier_demo.elf
+
+include src/c/tacle/tacle.mk

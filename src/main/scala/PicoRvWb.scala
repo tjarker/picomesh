@@ -487,7 +487,7 @@ class PicoRv(id: Int, c: PicoRvConfig) extends Module {
   *
   * @param c config
   */
-class PrefetchPicoRv(id: Int, c: PicoRvConfig) extends Module {
+class PrefetchPicoRv(id: Int, c: PicoRvConfig, exposeTrap: Boolean = false) extends Module {
 
   val io = IO(new Bundle {
     val wb = new WishbonePort(1)
@@ -505,6 +505,7 @@ class PrefetchPicoRv(id: Int, c: PicoRvConfig) extends Module {
       val addr = Output(UInt(32.W))
       val instr = Input(UInt(32.W))
     }
+    val trap = if (exposeTrap) Some(Output(Bool())) else None
   })
 
   io.barrierArrived := 0.B // default
@@ -522,6 +523,7 @@ class PrefetchPicoRv(id: Int, c: PicoRvConfig) extends Module {
    */
 
   val core = Module(new PicoRvBlackBox(c))
+  io.trap.foreach(_ := core.io.trap)
 
   val prefetcher = Module(new Prefetcher())
 

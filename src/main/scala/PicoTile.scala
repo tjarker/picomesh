@@ -60,7 +60,7 @@ class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSch
 
 }
 
-class WidePicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig) extends Tile(id, conf, reqSched, respSched, 4) {
+class WidePicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig, exposeTrap: Boolean = false) extends Tile(id, conf, reqSched, respSched, 4) {
 
   val barrierPort = IO(new Bundle {
     val barrierArrived = Output(Bool())
@@ -72,8 +72,12 @@ class WidePicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: Inverte
     val instr = Input(UInt(32.W))
   })
 
-  val pico = Module(new PrefetchPicoRv(id, picoConf))
-  
+  val pico = Module(new PrefetchPicoRv(id, picoConf, exposeTrap))
+
+  // simulation only: high while the core is halted in a trap
+  val trap = if (exposeTrap) Some(IO(Output(Bool())).suggestName("trap")) else None
+  trap.foreach(_ := pico.io.trap.get)
+
   pico.io.barrierRelease := barrierPort.barrierRelease
   barrierPort.barrierArrived := pico.io.barrierArrived
 
