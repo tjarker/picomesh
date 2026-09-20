@@ -47,6 +47,7 @@ class BlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSchedu
   io.reqIngress.data.addr := io.wb.adr(27, 0)
   io.reqIngress.data.data := io.wb.wdata
   io.reqIngress.data.write := io.wb.we
+  io.reqIngress.data.mask := io.wb.sel
   io.wb.rdata := io.respEgress.data.data
   io.wb.ack := 0.B
 
@@ -59,7 +60,12 @@ class BlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSchedu
       when(io.wb.cyc) {
         io.reqIngress.valid := sendSlotMatch
         when(sendSlotMatch) {
-          stateReg := State.WaitForResp
+          when(io.wb.we) {
+            stateReg := State.Idle
+            io.wb.ack := 1.B
+          }.otherwise {
+            stateReg := State.WaitForResp
+          }
         }.otherwise {
           stateReg := State.WaitForReqSlot
         }
@@ -68,7 +74,12 @@ class BlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSchedu
     is(State.WaitForReqSlot) {
       io.reqIngress.valid := sendSlotMatch
       when(sendSlotMatch) {
-        stateReg := State.WaitForResp
+        when(io.wb.we) {
+          stateReg := State.Idle
+          io.wb.ack := 1.B
+        }.otherwise {
+          stateReg := State.WaitForResp
+        }
       }
     }
     is(State.WaitForResp) {
@@ -146,6 +157,7 @@ class DualBlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSc
   io.reqIngress.data.addr := io.instrPort.addr(27, 0)
   io.reqIngress.data.data := io.wbData.wdata
   io.reqIngress.data.write := 0.B
+  io.reqIngress.data.mask := io.wbData.sel
   io.wbData.rdata := io.respEgress.data.data
   io.wbData.ack := 0.B
 
@@ -157,7 +169,12 @@ class DualBlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSc
     is(State.Idle) {
       when(io.wbData.cyc) {
         when(sendSlotMatchData && !collision) {
-          stateRegData := State.WaitForResp
+          when(io.wbData.we) {
+            stateRegData := State.Idle
+            io.wbData.ack := 1.B
+          }.otherwise {
+            stateRegData := State.WaitForResp
+          }
           io.reqIngress.valid := 1.B
           io.reqIngress.data.addr := io.wbData.adr(27, 0)
           io.reqIngress.data.write := io.wbData.we
@@ -168,7 +185,12 @@ class DualBlockingRequesterNi(id: Int, reqSched: Schedule, respSched: InvertedSc
     }
     is(State.WaitForReqSlot) {
       when(sendSlotMatchData && !collision) {
-          stateRegData := State.WaitForResp
+          when(io.wbData.we) {
+            stateRegData := State.Idle
+            io.wbData.ack := 1.B
+          }.otherwise {
+            stateRegData := State.WaitForResp
+          }
           io.reqIngress.valid := 1.B
           io.reqIngress.data.addr := io.wbData.adr(27, 0)
           io.reqIngress.data.write := io.wbData.we

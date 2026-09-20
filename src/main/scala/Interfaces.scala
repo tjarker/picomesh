@@ -6,6 +6,7 @@ class MemoryRequest extends Bundle {
   val addr = UInt(28.W)
   val data = UInt(32.W)
   val write = Bool()
+  val mask = UInt(4.W)
 }
 
 class MemoryResponse(words: Int) extends Bundle {

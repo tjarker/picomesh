@@ -18,6 +18,7 @@ class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSched
       val valid = Output(Bool())
       val addr = Output(UInt(32.W))
       val wrData = Output(UInt(32.W))
+      val mask = Output(UInt(4.W))
       val wr = Output(Bool())
     }
 
@@ -25,6 +26,7 @@ class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSched
       val valid = Output(Bool())
       val addr = Output(UInt(32.W))
       val wrData = Output(UInt(32.W))
+      val mask = Output(UInt(4.W))
       val wr = Output(Bool())
     }
 
@@ -52,14 +54,16 @@ class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSched
     _.valid := io.reqLookAhead.valid,
     _.addr := io.reqLookAhead.data.addr,
     _.wrData := io.reqLookAhead.data.data,
-    _.wr := io.reqLookAhead.data.write
+    _.wr := io.reqLookAhead.data.write,
+    _.mask := io.reqLookAhead.data.mask
   )
 
   io.comMemReq.expand(  
     _.valid := io.reqEgress.valid,
     _.addr := io.reqEgress.data.addr,
     _.wrData := io.reqEgress.data.data,
-    _.wr := io.reqEgress.data.write
+    _.wr := io.reqEgress.data.write,
+    _.mask := io.reqEgress.data.mask
   )
 
 
@@ -69,10 +73,11 @@ class PipelinedResponderNi(id: Int, reqSched: Schedule, respSched: InvertedSched
 
     val isActiveSender = sendSlotTo === i.U
     val isReceiver = recvSlotFrom === i.U
+    val requireRespone = !io.reqEgress.data.write
 
     // when a request arrives, we store it in the buffer and mark it as valid
     // when a send slot arrives we assume the packet is sent
-    when(isReceiver && io.reqEgress.valid) {
+    when(isReceiver && io.reqEgress.valid && requireRespone) {
       buffer := io.rdData
       valid := 1.B
     }.elsewhen(isActiveSender && validSendSlot) {
