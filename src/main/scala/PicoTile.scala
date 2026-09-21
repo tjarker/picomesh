@@ -18,15 +18,19 @@ object PicoTile extends App {
   emitVerilog(new PicoTile(0, conf, Schedule(3), new InvertedSchedule(3), PicoRvConfig.small), Array("--target-dir", "generated"))
 }
 
-class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig) extends Tile(id, conf, reqSched, respSched, 1) {
+class PicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: InvertedSchedule, picoConf: PicoRvConfig, exposeTrap: Boolean = false) extends Tile(id, conf, reqSched, respSched, 1) {
 
   val barrierPort = IO(new Bundle {
     val barrierArrived = Output(Bool())
     val barrierRelease = Input(Bool())
   })
 
-  val pico = Module(new PicoRv(id, picoConf))
-  
+  val pico = Module(new PicoRv(id, picoConf, exposeTrap))
+
+  // simulation only: high while the core is halted in a trap
+  val trap = if (exposeTrap) Some(IO(Output(Bool())).suggestName("trap")) else None
+  trap.foreach(_ := pico.io.trap.get)
+
   pico.io.barrierRelease := barrierPort.barrierRelease
   barrierPort.barrierArrived := pico.io.barrierArrived
 
@@ -67,10 +71,10 @@ class WidePicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: Inverte
     val barrierRelease = Input(Bool())
   })
 
-  val instrCheckPort = IO(new Bundle {
-    val addr = Output(UInt(32.W))
-    val instr = Input(UInt(32.W))
-  })
+  // val instrCheckPort = IO(new Bundle {
+  //   val addr = Output(UInt(32.W))
+  //   val instr = Input(UInt(32.W))
+  // })
 
   val pico = Module(new PrefetchPicoRv(id, picoConf, exposeTrap))
 
@@ -81,8 +85,8 @@ class WidePicoTile(id: Int, conf: Config, reqSched: Schedule, respSched: Inverte
   pico.io.barrierRelease := barrierPort.barrierRelease
   barrierPort.barrierArrived := pico.io.barrierArrived
 
-  instrCheckPort.addr := pico.io.instrCheck.addr
-  pico.io.instrCheck.instr := instrCheckPort.instr
+  // instrCheckPort.addr := pico.io.instrCheck.addr
+  // pico.io.instrCheck.instr := instrCheckPort.instr
 
   val requesterNi = Module(new DualBlockingRequesterNi(id, reqSched, respSched))
   val responderNi = Module(new PipelinedResponderNi(id, reqSched, respSched, Seq(0, 3, 4, 5, 6, 7, 8).filter(_ != id), 1))

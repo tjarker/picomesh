@@ -1,6 +1,6 @@
-DESIGN_NAME: Battuta
+DESIGN_NAME: WideBattuta
 VERILOG_FILES:
-  - dir::../../generated/Battuta.v
+  - dir::../../generated/WideBattuta.v
   - dir::../../src/verilog/picorv32.v
 
 VDD_NETS: ["vccd1"]
@@ -28,7 +28,7 @@ FP_PDN_CORE_RING: true
 # RUN_ANTENNA_REPAIR: true
 # GRT_ANTENNA_ITERS: 10
 
-#GRT_ALLOW_CONGESTION: true
+GRT_ALLOW_CONGESTION: true
 
 GRT_ANTENNA_REPAIR_DIODE_ONLY: true
 PRIMARY_GDSII_STREAMOUT_TOOL: "klayout"
@@ -36,8 +36,8 @@ MAGIC_CAPTURE_ERRORS: false
 
 FALLBACK_SDC: dir::base.sdc
 
-PL_TARGET_DENSITY_PCT: 40
-FP_CORE_UTIL: 40
+PL_TARGET_DENSITY_PCT: 39
+FP_CORE_UTIL: 39
 #FP_ASPECT_RATIO: 1.5
 FP_PIN_ORDER_CFG: dir::pin_order.cfg
 FP_SIZING: absolute
@@ -71,10 +71,10 @@ MACROS:
   sky130_sram_1kbyte_1rw1r_32x256_8:
     instances:
       array.memLowTile.mem:
-        location: [100, 100]
+        location: [200, 20]
         orientation: FS
       array.memHighTile.mem:
-        location: [700, 100]
+        location: [680, 20]
         orientation: S
     gds: dir::../../../gds/sky130_sram_1kbyte_1rw1r_32x256_8.gds
     lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef

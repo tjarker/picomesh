@@ -351,13 +351,14 @@ class PicoRvBlackBox(c: PicoRvConfig) extends BlackBox(Map(
   *
   * @param c config
   */
-class PicoRv(id: Int, c: PicoRvConfig) extends Module {
+class PicoRv(id: Int, c: PicoRvConfig, exposeTrap: Boolean = false) extends Module {
 
   val io = IO(new Bundle {
     val wb = new WishbonePort
     val remoteWb = Flipped(new WishbonePort)
     val barrierArrived = Output(Bool())
     val barrierRelease = Input(Bool())
+    val trap = if (exposeTrap) Some(Output(Bool())) else None
   })
 
   io.barrierArrived := 0.B // default
@@ -375,6 +376,7 @@ class PicoRv(id: Int, c: PicoRvConfig) extends Module {
    */
 
   val core = Module(new PicoRvBlackBox(c))
+  io.trap.foreach(_ := core.io.trap)
 
   val configReg = RegInit(0.U(1.W))
 
@@ -501,10 +503,10 @@ class PrefetchPicoRv(id: Int, c: PicoRvConfig, exposeTrap: Boolean = false) exte
     val remoteWb = Flipped(new WishbonePort)
     val barrierArrived = Output(Bool())
     val barrierRelease = Input(Bool())
-    val instrCheck = new Bundle {
-      val addr = Output(UInt(32.W))
-      val instr = Input(UInt(32.W))
-    }
+    // val instrCheck = new Bundle {
+    //   val addr = Output(UInt(32.W))
+    //   val instr = Input(UInt(32.W))
+    // }
     val trap = if (exposeTrap) Some(Output(Bool())) else None
   })
 
@@ -563,12 +565,12 @@ class PrefetchPicoRv(id: Int, c: PicoRvConfig, exposeTrap: Boolean = false) exte
   io.instrPort.valid := prefetcher.io.toNi.valid
   io.instrPort.addr := prefetcher.io.toNi.addr
 
-  io.instrCheck.addr := core.io.mem_addr
-  val wrongInstr = WireDefault(0.B)
-  dontTouch(wrongInstr)
-  when(core.io.mem_valid && core.io.mem_instr && prefetcher.io.toCore.ready) {
-    wrongInstr := io.instrCheck.instr =/= prefetcher.io.toCore.instr
-  }
+  // io.instrCheck.addr := core.io.mem_addr
+  // val wrongInstr = WireDefault(0.B)
+  // dontTouch(wrongInstr)
+  // when(core.io.mem_valid && core.io.mem_instr && prefetcher.io.toCore.ready) {
+  //   wrongInstr := io.instrCheck.instr =/= prefetcher.io.toCore.instr
+  // }
 
   // access from remote core
   val remoteScratchPadAccess = io.remoteWb.adr(27, 4) === 0x100_000.U

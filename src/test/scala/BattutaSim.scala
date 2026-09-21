@@ -21,18 +21,18 @@ object BattutaSim {
     Reporting.addProviderFilter("Channel")
   }
 
-  /** Access to a WideBattutaArray through its ponte port. Core k is node k + 3. */
-  class Ports(dut: WideBattutaArray) {
+  /** Access to a Battuta array through its ponte port. Core k is node k + 3. */
+  class Ports(clock: Clock, port: ponte.PonteAccessPort) {
 
     def read(addr: BigInt): BigInt = {
-      dut.io.pontePort.valid.poke(1.B)
-      dut.io.pontePort.addr.poke(addr.U)
-      dut.io.pontePort.write.poke(0.B)
-      dut.clock.step(1)
-      dut.clock.stepUntil(dut.io.pontePort.done, 1.B)
-      dut.io.pontePort.valid.poke(0.B)
-      val res = dut.io.pontePort.rdata.peek().litValue
-      dut.clock.step()
+      port.valid.poke(1.B)
+      port.addr.poke(addr.U)
+      port.write.poke(0.B)
+      clock.step(1)
+      clock.stepUntil(port.done, 1.B)
+      port.valid.poke(0.B)
+      val res = port.rdata.peek().litValue
+      clock.step()
       res
     }
 

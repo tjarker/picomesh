@@ -22,7 +22,7 @@ class SimMemoryEquivalence extends AnyFlatSpec with Matchers {
       dut.clock.step(1)
       dut.reset.poke(false.B)
 
-      val ports = new BattutaSim.Ports(dut)
+      val ports = new BattutaSim.Ports(dut.clock, dut.io.pontePort)
       while (!(0 until 6).forall(ports.inReset) && dut.clock.cycle < 200000) {
         dut.clock.step(500)
       }

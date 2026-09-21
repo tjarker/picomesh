@@ -1,6 +1,6 @@
 DESIGN_NAME: MemoryTile
 VERILOG_FILES:
-  - dir::../../../../generated/Battuta.v
+  - dir::../../../../generated/WideBattuta.v
   - dir::../../../../src/verilog/picorv32.v
 
 VDD_NETS: ["vccd1"]

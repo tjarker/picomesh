@@ -38,9 +38,22 @@ klayout-pico-mesh:
 
 
 
+# Verilog for the two tops that get hardened, emitted from the current RTL.
+verilog-battuta:
+	sbt "runMain Battuta"
+
+verilog-wide-battuta:
+	sbt "runMain WideBattuta"
+
 battuta_monolothic:
 	@rm -rf layout/Battuta/runs
 	${LIBRELANE_HARDEN} --save-views-to build/layout/Battuta layout/Battuta/configMono.yaml
+
+# The same flow for the prefetching system. Only the monolithic config is adapted; the
+# hierarchical one still needs the five remaining WidePicoTile tile configs.
+wide_battuta_monolothic:
+	@rm -rf layout/WideBattuta/runs
+	${LIBRELANE_HARDEN} --save-views-to build/layout/WideBattuta layout/WideBattuta/configMono.yaml
 
 battuta_core_0:
 	rm -rf layout/Battuta/tiles/PicoTile/runs

@@ -7,7 +7,10 @@ import Util._
 
 import s4noc._
 
-class AccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule, bootBinPath: String, romBinPath: String) extends Tile(id, conf, reqSched, respSched, 1) {
+class AccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule, bootBinPath: String, prog: ProgramRom) extends Tile(id, conf, reqSched, respSched, 1) {
+
+  def this(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: InvertedSchedule, bootBinPath: String, romBinPath: String) =
+    this(id, conf, reqSched, respSched, bootBinPath, ProgramRom.Baked(romBinPath))
 
   val pontePort = IO(Flipped(new ponte.PonteAccessPort))
 
@@ -45,23 +48,33 @@ class AccessTile(id: Int, conf: s4noc.Config, reqSched: Schedule, respSched: Inv
 
   val bootRom = VecInit(Util.Binary.load(bootBinPath).map(_.U(32.W)))
 
-  val progRom = VecInit(Util.Binary.load(romBinPath).map(_.U(32.W)))
+  // one word per line here, unlike the wide tile's four
+  val progWord: UInt => UInt = prog match {
+    case ProgramRom.Baked(romBinPath) =>
+      val progRom = VecInit(Util.Binary.load(romBinPath).map(_.U(32.W)))
+      addr => progRom(addr(26, 2))
+    case ProgramRom.Loaded(hexPath, lineBits) =>
+      val progRom = Mem(1 << lineBits, UInt(32.W))
+      loadMemoryFromFileInline(progRom, new java.io.File(hexPath).getAbsolutePath)
+      addr => progRom(addr(lineBits + 1, 2))
+  }
 
   val readData = Mux(
     responderNi.io.comMemReq.addr(27),
-    progRom(responderNi.io.comMemReq.addr(26, 2)),
+    progWord(responderNi.io.comMemReq.addr),
     bootRom(responderNi.io.comMemReq.addr(26, 2))
   )
   responderNi.io.rdData := readData
 
 }
 
-/** Where the wide access node's program ROM gets its contents. */
+/** Where an access node's program ROM gets its contents. */
 sealed trait ProgramRom
 object ProgramRom {
   /** Baked into the design at elaboration, as taped out. */
   case class Baked(binPath: String) extends ProgramRom
-  /** 2^lineBits bundles of 4 words read by $readmemh when the simulation starts, so one model serves any program. */
+  /** 2^lineBits lines read by $readmemh when the simulation starts, so one model serves any
+    * program. A line is one 4-word bundle in the wide tile, one word in the narrow one. */
   case class Loaded(hexPath: String, lineBits: Int) extends ProgramRom
 }
 

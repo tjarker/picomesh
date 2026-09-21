@@ -1,6 +1,6 @@
-DESIGN_NAME: Battuta
+DESIGN_NAME: WideBattuta
 VERILOG_FILES:
-  - dir::../../generated/Battuta.v
+  - dir::../../generated/WideBattuta.v
   - dir::../../src/verilog/picorv32.v
 
 VDD_NETS: ["vccd1"]
@@ -80,71 +80,71 @@ MACROS:
     lef: pdk_dir::libs.ref/sky130_sram_macros/lef/sky130_sram_1kbyte_1rw1r_32x256_8.lef
     nl: pdk_dir::libs.ref/sky130_sram_macros/verilog/sky130_sram_1kbyte_1rw1r_32x256_8.v
 
-  PicoTile:
+  WidePicoTile:
     instances:
       array.coreTiles_0:
         location: [100, 730]
         orientation: N
-    gds: dir::/../../build/layout/Battuta/tiles/PicoTile/gds/PicoTile.gds
-    lef: dir::/../../build/layout/Battuta/tiles/PicoTile/lef/PicoTile.lef
-    nl: dir::/../../build/layout/Battuta/tiles/PicoTile/nl/PicoTile.nl.v
+    gds: dir::/../../build/layout/WideBattuta/tiles/WidePicoTile/gds/WidePicoTile.gds
+    lef: dir::/../../build/layout/WideBattuta/tiles/WidePicoTile/lef/WidePicoTile.lef
+    nl: dir::/../../build/layout/WideBattuta/tiles/WidePicoTile/nl/WidePicoTile.nl.v
     lib:
-      "*": dir::/../../build/layout/Battuta/tiles/PicoTile/lib/nom_tt_025C_1v80/PicoTile__nom_tt_025C_1v80.lib
+      "*": dir::/../../build/layout/WideBattuta/tiles/WidePicoTile/lib/nom_tt_025C_1v80/PicoTile__nom_tt_025C_1v80.lib
 
   PicoTile_1:
     instances:
       array.coreTiles_1:
         location: [730, 730]
         orientation: N
-    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_1/gds/PicoTile_1.gds
-    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_1/lef/PicoTile_1.lef
-    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_1/nl/PicoTile_1.nl.v
+    gds: dir::/../../build/layout/WideBattuta/tiles/PicoTile_1/gds/PicoTile_1.gds
+    lef: dir::/../../build/layout/WideBattuta/tiles/PicoTile_1/lef/PicoTile_1.lef
+    nl: dir::/../../build/layout/WideBattuta/tiles/PicoTile_1/nl/PicoTile_1.nl.v
     lib:
-      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_1/lib/nom_tt_025C_1v80/PicoTile_1__nom_tt_025C_1v80.lib
+      "*": dir::/../../build/layout/WideBattuta/tiles/PicoTile_1/lib/nom_tt_025C_1v80/PicoTile_1__nom_tt_025C_1v80.lib
 
   PicoTile_2:
     instances:
       array.coreTiles_2:
         location: [1360, 730]
         orientation: N
-    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_2/gds/PicoTile_2.gds
-    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_2/lef/PicoTile_2.lef
-    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_2/nl/PicoTile_2.nl.v
+    gds: dir::/../../build/layout/WideBattuta/tiles/PicoTile_2/gds/PicoTile_2.gds
+    lef: dir::/../../build/layout/WideBattuta/tiles/PicoTile_2/lef/PicoTile_2.lef
+    nl: dir::/../../build/layout/WideBattuta/tiles/PicoTile_2/nl/PicoTile_2.nl.v
     lib:
-      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_2/lib/nom_tt_025C_1v80/PicoTile_2__nom_tt_025C_1v80.lib
+      "*": dir::/../../build/layout/WideBattuta/tiles/PicoTile_2/lib/nom_tt_025C_1v80/PicoTile_2__nom_tt_025C_1v80.lib
 
   PicoTile_3:
     instances:
       array.coreTiles_3:
         location: [100, 1360]
         orientation: N
-    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_3/gds/PicoTile_3.gds
-    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_3/lef/PicoTile_3.lef
-    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_3/nl/PicoTile_3.nl.v
+    gds: dir::/../../build/layout/WideBattuta/tiles/PicoTile_3/gds/PicoTile_3.gds
+    lef: dir::/../../build/layout/WideBattuta/tiles/PicoTile_3/lef/PicoTile_3.lef
+    nl: dir::/../../build/layout/WideBattuta/tiles/PicoTile_3/nl/PicoTile_3.nl.v
     lib:
-      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_3/lib/nom_tt_025C_1v80/PicoTile_3__nom_tt_025C_1v80.lib
+      "*": dir::/../../build/layout/WideBattuta/tiles/PicoTile_3/lib/nom_tt_025C_1v80/PicoTile_3__nom_tt_025C_1v80.lib
 
   PicoTile_4:
     instances:
       array.coreTiles_4:
         location: [730, 1360]
         orientation: N
-    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_4/gds/PicoTile_4.gds
-    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_4/lef/PicoTile_4.lef
-    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_4/nl/PicoTile_4.nl.v
+    gds: dir::/../../build/layout/WideBattuta/tiles/PicoTile_4/gds/PicoTile_4.gds
+    lef: dir::/../../build/layout/WideBattuta/tiles/PicoTile_4/lef/PicoTile_4.lef
+    nl: dir::/../../build/layout/WideBattuta/tiles/PicoTile_4/nl/PicoTile_4.nl.v
     lib:
-      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_4/lib/nom_tt_025C_1v80/PicoTile_4__nom_tt_025C_1v80.lib
+      "*": dir::/../../build/layout/WideBattuta/tiles/PicoTile_4/lib/nom_tt_025C_1v80/PicoTile_4__nom_tt_025C_1v80.lib
   
   PicoTile_5:
     instances:
       array.coreTiles_5:
         location: [1360, 1360]
         orientation: N
-    gds: dir::/../../build/layout/Battuta/tiles/PicoTile_5/gds/PicoTile_5.gds
-    lef: dir::/../../build/layout/Battuta/tiles/PicoTile_5/lef/PicoTile_5.lef
-    nl: dir::/../../build/layout/Battuta/tiles/PicoTile_5/nl/PicoTile_5.nl.v
+    gds: dir::/../../build/layout/WideBattuta/tiles/PicoTile_5/gds/PicoTile_5.gds
+    lef: dir::/../../build/layout/WideBattuta/tiles/PicoTile_5/lef/PicoTile_5.lef
+    nl: dir::/../../build/layout/WideBattuta/tiles/PicoTile_5/nl/PicoTile_5.nl.v
     lib:
-      "*": dir::/../../build/layout/Battuta/tiles/PicoTile_5/lib/nom_tt_025C_1v80/PicoTile_5__nom_tt_025C_1v80.lib
+      "*": dir::/../../build/layout/WideBattuta/tiles/PicoTile_5/lib/nom_tt_025C_1v80/PicoTile_5__nom_tt_025C_1v80.lib
 
 PDN_MACRO_CONNECTIONS:
   - "array.memLowTile.mem vccd1 vssd1 vccd1 vssd1"
